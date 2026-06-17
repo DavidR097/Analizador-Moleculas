@@ -1,0 +1,32 @@
+# =============== Visual Studio ===============
+.vs/
+*.suo
+*.user
+*.sln.cache
+*.slnx
+*.vsidx
+
+# =============== Build ===============
+bin/
+obj/
+packages/
+*.pdb
+*.exe
+*.dll
+
+# =============== User-specific files ===============
+*.user
+*.rsuser
+
+# =============== Logs ===============
+*.log
+logs/
+
+# =============== Temporary files ===============
+*.tmp
+*.temp
+
+# =============== Other ===============
+Thumbs.db
+.DS_Store
+*.bak
