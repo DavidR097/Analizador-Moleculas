@@ -10,6 +10,7 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace AnalizadorMoleculas.ViewModels
 {
@@ -50,13 +51,6 @@ namespace AnalizadorMoleculas.ViewModels
             set { _molTotalUn = value; OnPropertyChanged(nameof(MolTotalUn)); }
         }
 
-        private string _molConversion = "0%";
-        public string MolConversion
-        {
-            get => _molConversion;
-            set { _molConversion = value; OnPropertyChanged(nameof(MolConversion)); }
-        }
-
         private int _molLaboratorios;
         public int MolLaboratorios
         {
@@ -64,9 +58,6 @@ namespace AnalizadorMoleculas.ViewModels
             set { _molLaboratorios = value; OnPropertyChanged(nameof(MolLaboratorios)); }
         }
 
-        // ======================================================================
-        // AGREGADAS: Propiedades específicas para el análisis de la Molécula
-        // ======================================================================
         private string _molLaboratorioLider = "—";
         public string MolLaboratorioLider
         {
@@ -81,7 +72,6 @@ namespace AnalizadorMoleculas.ViewModels
             set { _molPorcentajeTop = value; OnPropertyChanged(nameof(MolPorcentajeTop)); }
         }
 
-        // ── Gráficos ──────────────────────────────────────────────────────────
 
         private ISeries[] _molSeriesBarras = Array.Empty<ISeries>();
         public ISeries[] MolSeriesBarras
@@ -111,20 +101,65 @@ namespace AnalizadorMoleculas.ViewModels
             set { _molYAxes = value; OnPropertyChanged(nameof(MolYAxes)); }
         }
 
-        // ── Tabla detalle ─────────────────────────────────────────────────────
-
-        private DataTable _molDetalleView;
-        public DataTable MolDetalleView
+        private DataTable _molDetallePx;
+        public DataTable MolDetallePx
         {
-            get => _molDetalleView;
-            set { _molDetalleView = value; OnPropertyChanged(nameof(MolDetalleView)); }
+            get => _molDetallePx;
+            set { _molDetallePx = value; OnPropertyChanged(nameof(MolDetallePx)); }
         }
 
-        // ── Inicialización ────────────────────────────────────────────────────
+        private DataTable _molDetalleUn;
+        public DataTable MolDetalleUn
+        {
+            get => _molDetalleUn;
+            set { _molDetalleUn = value; OnPropertyChanged(nameof(MolDetalleUn)); }
+        }
 
         private void InicializarMolecula()
         {
             CargarMoleculasCommand = new RelayCommand(CargarMoleculas);
+        }
+
+        private string _molTipoMercadoLabel = "—";
+        public string MolTipoMercadoLabel
+        {
+            get => _molTipoMercadoLabel;
+            set { _molTipoMercadoLabel = value; OnPropertyChanged(nameof(MolTipoMercadoLabel)); }
+        }
+
+        private SolidColorBrush _molTipoMercadoBrush = new SolidColorBrush(Color.FromRgb(90, 90, 120));
+        public SolidColorBrush MolTipoMercadoBrush
+        {
+            get => _molTipoMercadoBrush;
+            set { _molTipoMercadoBrush = value; OnPropertyChanged(nameof(MolTipoMercadoBrush)); }
+        }
+
+        private string _molConcentracionLabel = "—";
+        public string MolConcentracionLabel
+        {
+            get => _molConcentracionLabel;
+            set { _molConcentracionLabel = value; OnPropertyChanged(nameof(MolConcentracionLabel)); }
+        }
+        
+        private SolidColorBrush _molConcentracionBrush = new SolidColorBrush(Color.FromRgb(90, 90, 120));
+        public SolidColorBrush MolConcentracionBrush
+        {
+            get => _molConcentracionBrush;
+            set { _molConcentracionBrush = value; OnPropertyChanged(nameof(MolConcentracionBrush)); }
+        }
+
+        private string _molDiversidadLabel = "—";
+        public string MolDiversidadLabel
+        {
+            get => _molDiversidadLabel;
+            set { _molDiversidadLabel = value; OnPropertyChanged(nameof(MolDiversidadLabel)); }
+        }
+
+        private SolidColorBrush _molDiversidadBrush = new SolidColorBrush(Color.FromRgb(90, 90, 120));
+        public SolidColorBrush MolDiversidadBrush
+        {
+            get => _molDiversidadBrush;
+            set { _molDiversidadBrush = value; OnPropertyChanged(nameof(MolDiversidadBrush)); }
         }
 
         public void CargarMoleculas()
@@ -160,17 +195,14 @@ namespace AnalizadorMoleculas.ViewModels
 
             if (registros.Count == 0) return;
 
-            // KPIs Base
             double totalPx = registros.Sum(x => x.TotalRecetado);
             double totalUn = registros.Sum(x => x.TotalVendido);
             MolTotalPx = totalPx;
-            MolTotalUn = totalUn;
-            MolConversion = totalPx > 0 ? $"{(totalUn / totalPx) * 100:N1}%" : "0%";
+            MolTotalUn = totalUn;            
 
             var ti = CultureInfo.GetCultureInfo("es-CO").TextInfo;
             string TitleCase(string s) => ti.ToTitleCase((s ?? "").ToLower());
 
-            // Agrupación por laboratorio
             var porLab = registros
                 .GroupBy(x => x.Laboratorio ?? "No indicado")
                 .Select(g => new
@@ -179,26 +211,90 @@ namespace AnalizadorMoleculas.ViewModels
                     Px = g.Sum(x => x.TotalRecetado),
                     Un = g.Sum(x => x.TotalVendido)
                 })
-                .OrderByDescending(x => x.Px)
+                .OrderByDescending(x => x.Un)
                 .ToList();
 
             MolLaboratorios = porLab.Count;
 
-            // CORREGIDO: Guardar en la propiedad correcta de la Molécula
             MolLaboratorioLider = porLab.Any() ? porLab.First().Lab : "—";
 
             var top10 = porLab.Take(10).ToList();
             var top8Pie = porLab.Take(8).ToList();
 
-            // Cálculo del pastel (Limitado al top 8)
-            double totalPxPie = porLab.Sum(x => x.Px);
-            double sumaTop8 = top8Pie.Sum(x => x.Px);
-            double porcentajeTop = totalPxPie > 0 ? (sumaTop8 / totalPxPie) * 100 : 0;
+            double totalUnPie = porLab.Sum(x => x.Un);
+            double sumaTop8 = top8Pie.Sum(x => x.Un);
+            double porcentajeTop = totalUnPie > 0 ? (sumaTop8 / totalUnPie) * 100 : 0;
 
-            // CORREGIDO: Guardar en la propiedad correcta de la Molécula
+            double totalCombinado = totalPx + totalUn;
+            if (totalCombinado > 0)
+            {
+                double pctPx = (totalPx / totalCombinado) * 100;
+                if (pctPx >= 70)
+                {
+                    MolTipoMercadoLabel = "Predominantemente Rx";
+                    MolTipoMercadoBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#B5179E"));
+                }
+                else if ((100 - pctPx) >= 70)
+                {
+                    MolTipoMercadoLabel = "Altamente Vendido";
+                    MolTipoMercadoBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CC9F0"));
+                }
+                else
+                {
+                    MolTipoMercadoLabel = "Mercado Mixto";
+                    MolTipoMercadoBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#7209B7"));
+                }
+            }
+            else
+            {
+                MolTipoMercadoLabel = "Sin datos";
+                MolTipoMercadoBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5A5A78"));
+            }
+
+            double cuotaLider = totalPx > 0 && porLab.Any()
+                ? (porLab.First().Px / totalPx) * 100
+                : 0;
+
+            if (cuotaLider >= 70)
+            {
+                MolConcentracionLabel = "Mercado Monopólico";
+                MolConcentracionBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF6B6B"));
+            }
+            else if (cuotaLider >= 50)
+            {
+                MolConcentracionLabel = "Mercado Concentrado";
+                MolConcentracionBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFB347"));
+            }
+            else
+            {
+                MolConcentracionLabel = "Mercado Competitivo";
+                MolConcentracionBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3DDC84"));
+            }
+
+            int numLabs = porLab.Count;
+            if (numLabs <= 2)
+            {
+                MolDiversidadLabel = "Muy baja · ≤2 labs";
+                MolDiversidadBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF6B6B"));
+            }
+            else if (numLabs <= 5)
+            {
+                MolDiversidadLabel = "Baja · 3–5 labs";
+                MolDiversidadBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFB347"));
+            }
+            else if (numLabs <= 12)
+            {
+                MolDiversidadLabel = "Media · 6–12 labs";
+                MolDiversidadBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CC9F0"));
+            }
+            else
+            {
+                MolDiversidadLabel = "Alta · +12 labs";
+                MolDiversidadBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3DDC84"));
+            }
+
             MolPorcentajeTop = $"{porcentajeTop:F1}%";
 
-            // Gráfico de Barras (Top 10 Labs)
             MolSeriesBarras = new ISeries[]
             {
                 new ColumnSeries<double>
@@ -228,7 +324,7 @@ namespace AnalizadorMoleculas.ViewModels
                     Labels         = top10.Select(x => x.Lab).ToList(),
                     LabelsRotation = -35,
                     TextSize       = 10,
-                    LabelsPaint    = new SolidColorPaint(new SKColor(90, 90, 120)),                    
+                    LabelsPaint    = new SolidColorPaint(new SKColor(90, 90, 120)),
                 }
             };
 
@@ -242,41 +338,67 @@ namespace AnalizadorMoleculas.ViewModels
                 }
             };
 
-            // Gráfico de Pie (Top 8 Labs)
             MolSeriesPie = top8Pie.Select(lab =>
             {
-                double share = totalPxPie > 0 ? lab.Px / totalPxPie : 0;
+                double share = totalUnPie > 0 ? lab.Un / totalUnPie : 0;
                 return (ISeries)new PieSeries<double>
                 {
                     Name = lab.Lab,
-                    Values = new[] { lab.Px },
+                    Values = new[] { lab.Un },
                     DataLabelsPaint = new SolidColorPaint(SKColors.White),
                     DataLabelsSize = 13,
                     DataLabelsPosition = LiveChartsCore.Measure.PolarLabelsPosition.Middle,
                     DataLabelsFormatter = _ => $"{share:P1}",
-                    ToolTipLabelFormatter = _ => $"{lab.Lab}\nPX: {lab.Px:N0} ({share:P1})"
+                    ToolTipLabelFormatter = _ => $"{lab.Un:N0} ({share:P1})"
                 };
             }).ToArray();
+            
+            var dtPx = new DataTable();
+            dtPx.Columns.Add("Laboratorio", typeof(string));
+            dtPx.Columns.Add("⭐ Pack Top", typeof(string));
+            dtPx.Columns.Add("Recetado (PX)", typeof(string));
 
-            // Tabla detalle completa (todos los laboratorios)
-            var dt = new DataTable();
-            dt.Columns.Add("Laboratorio", typeof(string));
-            dt.Columns.Add("Recetado (PX)", typeof(string));
-            dt.Columns.Add("Vendido (UN)", typeof(string));
-            dt.Columns.Add("Conversión %", typeof(string));
+            var porLabPx = registros
+                .GroupBy(x => x.Laboratorio ?? "No indicado")
+                .Select(g => new
+                {
+                    Lab = TitleCase(g.Key),
+                    Px = g.Sum(x => x.TotalRecetado),
+                    Pack = g.OrderByDescending(x => x.TotalRecetado)
+                              .Select(x => x.PackPx)
+                              .FirstOrDefault(p => !string.IsNullOrWhiteSpace(p)) ?? "—"
+                })
+                .OrderByDescending(x => x.Px)
+                .ToList();
 
-            foreach (var r in porLab)
-            {
-                string conv = r.Px > 0 ? $"{(r.Un / r.Px) * 100:N1}%" : "—";
-                dt.Rows.Add(
-                    r.Lab,
-                    r.Px.ToString("N0", _culturaColombia),
-                    r.Un.ToString("N0", _culturaColombia),
-                    conv);
-            }
-            MolDetalleView = dt;
+            foreach (var r in porLabPx)
+                dtPx.Rows.Add(r.Lab, r.Pack, r.Px.ToString("N0", _culturaColombia));
 
-            // Actualización del mensaje de estado del sistema
+            MolDetallePx = dtPx;
+
+            var dtUn = new DataTable();
+            dtUn.Columns.Add("Laboratorio", typeof(string));
+            dtUn.Columns.Add("⭐ Pack Top", typeof(string));
+            dtUn.Columns.Add("Vendido (UN)", typeof(string));
+
+            var porLabUn = registros
+                .GroupBy(x => x.Laboratorio ?? "No indicado")
+                .Select(g => new
+                {
+                    Lab = TitleCase(g.Key),
+                    Un = g.Sum(x => x.TotalVendido),
+                    Pack = g.OrderByDescending(x => x.TotalVendido)
+                             .Select(x => x.PackUn)
+                             .FirstOrDefault(p => !string.IsNullOrWhiteSpace(p)) ?? "—"
+                })
+                .OrderByDescending(x => x.Un)
+                .ToList();
+
+            foreach (var r in porLabUn)
+                dtUn.Rows.Add(r.Lab, r.Pack, r.Un.ToString("N0", _culturaColombia));
+
+            MolDetalleUn = dtUn;
+
             StatusMessage = $"✓ {_moleculaSeleccionada} · {porLab.Count} labs · Líder: {MolLaboratorioLider} · Representación Top 8: {MolPorcentajeTop}";
         }
     }
