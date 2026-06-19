@@ -739,7 +739,7 @@ namespace AnalizadorMoleculas.ViewModels
                     DataLabelsPaint = new SolidColorPaint(SKColors.White),
                     DataLabelsPosition = LiveChartsCore.Measure.PolarLabelsPosition.Middle,
                     DataLabelsFormatter = point => $"{share:P1}",
-                    ToolTipLabelFormatter = point => $"{lab.Lab}\n{lab.Suma:N0} ({share:P1})"
+                    ToolTipLabelFormatter = point => $"{lab.Suma:N0} ({share:P1})"
                 };
             }).ToArray();
             OnPropertyChanged(nameof(ParticipacionLaboratorioSeries));

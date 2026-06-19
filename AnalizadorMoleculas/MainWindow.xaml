@@ -618,7 +618,7 @@
 
                                     <StackPanel Grid.Column="2" Margin="10,0,10,0">
                                         <TextBlock Text="Productos" FontSize="14" Foreground="#94A3B8"/>
-                                        <TextBlock Text="{Binding TotalProductos}"  FontSize="26" FontWeight="Bold" Foreground="#34D399" Margin="0,8,0,4"/>
+                                        <TextBlock Text="{Binding TotalProductos, StringFormat={}{0:N0}}"  FontSize="26" FontWeight="Bold" Foreground="#34D399" Margin="0,8,0,4"/>
                                         <TextBlock Text="Registros" FontSize="13" Foreground="#64748B"/>
                                     </StackPanel>
 
