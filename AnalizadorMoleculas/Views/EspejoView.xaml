@@ -1,0 +1,151 @@
+﻿<UserControl x:Class="AnalizadorMoleculas.Views.EspejoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- KPIs -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource KpiCard}" Margin="0,0,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="FORMULACIONES PX" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
+                    <TextBlock Grid.Row="1" Text="{Binding TotalPxCalculado, StringFormat={}{0:N0}}" Foreground="{StaticResource AcentoMagenta}" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
+                    <TextBlock Grid.Row="2" Text="unidades recetadas" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1" Style="{StaticResource KpiCard}" Margin="5,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="VENTAS REALES UN" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
+                    <TextBlock Grid.Row="1" Text="{Binding TotalUnCalculado, StringFormat={}{0:N0}}" Foreground="{StaticResource AcentoCian}" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
+                    <TextBlock Grid.Row="2" Text="unidades vendidas" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource KpiCard}" Margin="5,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="EFICACIA CONVERSIÓN" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
+                    <TextBlock Grid.Row="1" Text="{Binding PorcentajeConversion}" Foreground="{StaticResource VerdeOk}" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
+                    <TextBlock Grid.Row="2" Text="receta → venta" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="3" Style="{StaticResource KpiCard}" Margin="10,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="MOLÉCULAS EN CRUCE" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
+                    <TextBlock Grid.Row="1" Text="{Binding ListaComparacionEspejo.Count, StringFormat={}{0:N0}}" Foreground="White" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
+                    <TextBlock Grid.Row="2" Text="combinaciones únicas" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Encabezado de tabla -->
+        <Border Grid.Row="1" Style="{StaticResource PanelContenido}" Padding="20,14">
+            <Grid>
+                <StackPanel>
+                    <TextBlock Text="Consolidado Cruce Espejo · ATC × Laboratorio × Producto" Foreground="{StaticResource TextoPrimario}" FontSize="13" FontWeight="SemiBold"/>
+                    <TextBlock Text="Llave maestra: ATC III (4 dígitos) · Laboratorio saneado · Producto normalizado  —  ceros suprimidos automáticamente" Foreground="{StaticResource TextoSecundario}" FontSize="11" Margin="0,4,0,0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Border Background="#0D1F15" BorderBrush="#2A4A35" BorderThickness="1" CornerRadius="6" Padding="10,5">
+                        <TextBlock Text="CRUCE EN MEMORIA  ●" Foreground="{StaticResource VerdeOk}" FontSize="10" FontFamily="Consolas" FontWeight="Bold"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- DataGrid -->
+        <Border Grid.Row="2" Style="{StaticResource PanelContenido}" Padding="0" MinHeight="380">
+            <DataGrid ItemsSource="{Binding ListaComparacionEspejo}" AutoGenerateColumns="False" IsReadOnly="True" RowHeight="34">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Código ATC" Binding="{Binding Atc}" Width="95">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="FontFamily" Value="Consolas"/>
+                                <Setter Property="Foreground" Value="{StaticResource AcentoCian}"/>
+                                <Setter Property="Padding" Value="10,0"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Laboratorio" Binding="{Binding Laboratorio}" Width="1.4*"/>
+                    <DataGridTextColumn Header="Pack PX" Binding="{Binding PackPx}" Width="1.6*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Padding" Value="10,0"/>
+                                <Setter Property="Foreground" Value="{StaticResource AcentoMagenta}"/>
+                                <Setter Property="FontSize" Value="11"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Recetados (PX)" Binding="{Binding TotalRecetado, StringFormat={}{0:N0}}" Width="130">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                <Setter Property="Padding" Value="0,0,14,0"/>
+                                <Setter Property="Foreground" Value="{StaticResource AcentoMagenta}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Pack UN" Binding="{Binding PackUn}" Width="1.6*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Padding" Value="10,0"/>
+                                <Setter Property="Foreground" Value="{StaticResource AcentoCian}"/>
+                                <Setter Property="FontSize" Value="11"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Vendido UN" Binding="{Binding TotalVendido, StringFormat={}{0:N0}}" Width="120">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Right"/>
+                                <Setter Property="Padding" Value="0,0,14,0"/>
+                                <Setter Property="Foreground" Value="{StaticResource AcentoCian}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>
