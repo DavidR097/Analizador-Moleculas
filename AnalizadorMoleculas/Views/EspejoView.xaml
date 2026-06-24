@@ -14,7 +14,6 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- KPIs -->
         <Grid Grid.Row="0" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -76,7 +75,6 @@
             </Border>
         </Grid>
 
-        <!-- Encabezado de tabla -->
         <Border Grid.Row="1" Style="{StaticResource PanelContenido}" Padding="20,14">
             <Grid>
                 <StackPanel>
@@ -91,7 +89,6 @@
             </Grid>
         </Border>
 
-        <!-- DataGrid -->
         <Border Grid.Row="2" Style="{StaticResource PanelContenido}" Padding="0" MinHeight="380">
             <DataGrid ItemsSource="{Binding ListaComparacionEspejo}" AutoGenerateColumns="False" IsReadOnly="True" RowHeight="34">
                 <DataGrid.Columns>

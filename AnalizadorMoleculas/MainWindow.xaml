@@ -28,7 +28,6 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- SIDEBAR (sin cambios) -->
         <Border Grid.Column="0" Background="{StaticResource BgSidebar}" BorderBrush="{StaticResource BorderSutil}" BorderThickness="0,0,1,0">
             <Grid>
                 <Grid.RowDefinitions>
@@ -45,6 +44,13 @@
 
                 <StackPanel Grid.Row="1" Margin="0,8,0,0">
                     <TextBlock Text="PRINCIPAL" Foreground="{StaticResource TextoMuted}" FontSize="9" FontWeight="Bold" FontFamily="Consolas" Margin="26,0,0,8"/>
+
+                    <RadioButton Style="{StaticResource NavItem}" IsChecked="True" Command="{Binding NavigateCommand}" CommandParameter="hub" x:Name="NavHub">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🏠" FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Home" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
 
                     <RadioButton Style="{StaticResource NavItem}" IsChecked="True" Command="{Binding NavigateCommand}" CommandParameter="espejo" x:Name="NavEspejo">
                         <StackPanel Orientation="Horizontal">
@@ -74,6 +80,20 @@
                         </StackPanel>
                     </RadioButton>
 
+                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="brechas" x:Name="NavBrechas">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚠" FontSize="13" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Brechas de Información" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="sqlite" x:Name="NavSqlite">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="💾" FontSize="13" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Base de Datos Local" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+
                     <Border Height="1" Background="{StaticResource BorderSutil}" Margin="20,16"/>
 
                     <TextBlock Text="ACCIONES" Foreground="{StaticResource TextoMuted}" FontSize="9" FontWeight="Bold" FontFamily="Consolas" Margin="26,0,0,8"/>
@@ -91,14 +111,12 @@
             </Grid>
         </Border>
 
-        <!-- ÁREA DE CONTENIDO -->
         <Grid Grid.Column="1" Background="{StaticResource BgBase}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="56"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Encabezado común -->
             <Border Grid.Row="0" Background="#09091A" BorderBrush="{StaticResource BorderSutil}" BorderThickness="0,0,0,1" Padding="24,0">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -122,13 +140,15 @@
                 </Grid>
             </Border>
 
-            <!-- Contenedor de vistas (se superponen y se muestran según navegación) -->
             <Border Grid.Row="1" Padding="20,20,14,20">
                 <Grid>
+                    <views:HubView Visibility="{Binding VistaActual, Converter={StaticResource ViewVisibilityConverter}, ConverterParameter=hub}"/>
                     <views:EspejoView Visibility="{Binding VistaActual, Converter={StaticResource ViewVisibilityConverter}, ConverterParameter=espejo}"/>
                     <views:ArchivosView Visibility="{Binding VistaActual, Converter={StaticResource ViewVisibilityConverter}, ConverterParameter=archivos}"/>
                     <views:MetricasView Visibility="{Binding VistaActual, Converter={StaticResource ViewVisibilityConverter}, ConverterParameter=metricas}"/>
                     <views:MoleculaView Visibility="{Binding VistaActual, Converter={StaticResource ViewVisibilityConverter}, ConverterParameter=molecula}"/>
+                    <views:BrechasView Visibility="{Binding VistaActual, Converter={StaticResource ViewVisibilityConverter}, ConverterParameter=brechas}"/>
+                    <views:SqliteView Visibility="{Binding VistaActual, Converter={StaticResource ViewVisibilityConverter}, ConverterParameter=sqlite}"/>
                 </Grid>
             </Border>
         </Grid>

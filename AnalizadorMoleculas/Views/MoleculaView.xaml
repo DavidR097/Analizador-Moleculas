@@ -7,200 +7,204 @@
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="900">
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
 
-        <!-- Selector -->
-        <Border Grid.Row="0" Style="{StaticResource PanelContenido}" Padding="20,14">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="320"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <TextBlock Grid.Column="0" Text="Seleccionar Molécula (ATC):" Foreground="{StaticResource TextoSecundario}" FontSize="12" VerticalAlignment="Center" Margin="0,0,12,0"/>
-
-                <ComboBox Grid.Column="1" ItemsSource="{Binding MoleculasDisponibles}" SelectedItem="{Binding MoleculaSeleccionada}" Height="36" Background="#14142A" Foreground="{StaticResource TextoPrimario}" BorderBrush="{StaticResource BorderSutil}" IsEditable="True" IsTextSearchEnabled="True"/>
-
-                <Button Grid.Column="2" Content="🔄 Cargar Moléculas" Style="{StaticResource BtnSecundario}" Command="{Binding CargarMoleculasCommand}" Margin="12,0,0,0" Height="36" Padding="14,0"/>
-
-                <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Border Background="#0D1F15" BorderBrush="#2A4A35" BorderThickness="1" CornerRadius="6" Padding="10,5">
-                        <TextBlock Foreground="{StaticResource VerdeOk}" FontSize="10" FontFamily="Consolas" FontWeight="Bold">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}{0} moléculas cargadas">
-                                    <Binding Path="MoleculasDisponibles.Count"/>
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
-                    </Border>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- KPIs -->
-        <Grid Grid.Row="1" Margin="0,10,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <Border Grid.Column="0" Style="{StaticResource KpiCard}" Margin="0,0,10,0">
-                <StackPanel>
-                    <TextBlock Text="RECETADO (PX)" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
-                    <TextBlock Text="{Binding MolTotalPx, StringFormat={}{0:N0}}" Foreground="{StaticResource AcentoMagenta}" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
-                    <TextBlock Text="unidades formuladas" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
-                </StackPanel>
-            </Border>
-
-            <Border Grid.Column="1" Style="{StaticResource KpiCard}" Margin="5,0">
-                <StackPanel>
-                    <TextBlock Text="VENDIDO (UN)" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
-                    <TextBlock Text="{Binding MolTotalUn, StringFormat={}{0:N0}}" Foreground="{StaticResource AcentoCian}" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
-                    <TextBlock Text="unidades vendidas" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
-                </StackPanel>
-            </Border>
-
-            <Border Grid.Column="2" Style="{StaticResource KpiCard}" Margin="5,0">
-                <StackPanel>
-                    <TextBlock Text="Laboratorio Lider en Ventas" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
-                    <TextBlock Text="{Binding MolLaboratorioLider}" Foreground="{StaticResource VerdeOk}" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
-                    <TextBlock Text="Participación" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
-                </StackPanel>
-            </Border>
-
-            <Border Grid.Column="3" Style="{StaticResource KpiCard}" Margin="10,0,0,0">
-                <StackPanel>
-                    <TextBlock Text="LABORATORIOS" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
-                    <TextBlock Text="{Binding MolLaboratorios}" Foreground="White" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
-                    <TextBlock Text="competidores en la molécula" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
-                </StackPanel>
-            </Border>
-        </Grid>
-
-        <!-- Perfil de molécula -->
-        <Border Grid.Row="2" Background="#0C0C1A" BorderBrush="#1E1E35" BorderThickness="1" CornerRadius="8" Padding="16,11" Margin="0,0,0,10">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,0">
-                    <TextBlock Text="◈" Foreground="#7209B7" FontSize="15" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                    <TextBlock Text="PERFIL DE MOLÉCULA" Foreground="#5A5A78" FontSize="9" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <Border Grid.Column="1" Background="#0F0F1E" BorderBrush="#252540" BorderThickness="1" CornerRadius="6" Margin="0,0,8,0" Padding="16,9">
-                    <StackPanel>
-                        <TextBlock Text="CANAL DOMINANTE" Foreground="#38384E" FontSize="8" FontWeight="Bold" FontFamily="Consolas" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding MolTipoMercadoLabel}" Foreground="{Binding MolTipoMercadoBrush}" FontSize="12" FontWeight="Bold" FontFamily="Consolas"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="2" Background="#0F0F1E" BorderBrush="#252540" BorderThickness="1" CornerRadius="6" Margin="0,0,8,0" Padding="16,9">
-                    <StackPanel>
-                        <TextBlock Text="CONCENTRACIÓN" Foreground="#38384E" FontSize="8" FontWeight="Bold" FontFamily="Consolas" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding MolConcentracionLabel}" Foreground="{Binding MolConcentracionBrush}" FontSize="12" FontWeight="Bold" FontFamily="Consolas"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="3" Background="#0F0F1E" BorderBrush="#252540" BorderThickness="1" CornerRadius="6" Padding="16,9">
-                    <StackPanel>
-                        <TextBlock Text="DIVERSIDAD" Foreground="#38384E" FontSize="8" FontWeight="Bold" FontFamily="Consolas" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding MolDiversidadLabel}" Foreground="{Binding MolDiversidadBrush}" FontSize="12" FontWeight="Bold" FontFamily="Consolas"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
-        </Border>
-
-        <!-- Gráficos y tablas detalladas -->
-        <Grid Grid.Row="3" Margin="15,0,15,15">
+        <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="380"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="6.5*"/>
-                <ColumnDefinition Width="3.5*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Gráfico de barras por laboratorio -->
-            <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource PanelContenido}" Margin="0,0,6,12">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="Top 10 · Laboratorios por Recetado (PX)" Foreground="{StaticResource AcentoCian}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,15"/>
-                    <lvc:CartesianChart Grid.Row="1" Series="{Binding MolSeriesBarras}" XAxes="{Binding MolXAxes}" YAxes="{Binding MolYAxes}" LegendPosition="Top" Background="#FF10101C"/>
-                </Grid>
-            </Border>
-
-            <!-- Gráfico circular de participación -->
-            <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource PanelContenido}" Margin="6,0,0,12">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="{Binding MolPorcentajeTop, StringFormat='Top 8 laboratorios representan el {0} del total en ventas'}" Foreground="{StaticResource AcentoCian}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                    <lvc:PieChart Grid.Row="1" Series="{Binding MolSeriesPie}" Background="#FF10101C" LegendPosition="Bottom" LegendBackgroundPaint="{Binding LegendBackgroundPaint}" LegendTextPaint="{Binding LegendTextPaint}"/>
-                </Grid>
-            </Border>
-
-            <!-- Tablas de ranking (PX y UN) -->
-            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource PanelContenido}" Padding="0" Margin="0,4,0,0">
+            <!-- Selector -->
+            <Border Grid.Row="0" Style="{StaticResource PanelContenido}" Padding="20,14">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="1"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="320"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <Grid Grid.Column="0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="#0D0D1E" Padding="16,10" BorderBrush="{StaticResource BorderSutil}" BorderThickness="0,0,0,1">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔬" FontSize="11" Margin="0,0,7,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Ranking por Recetado (PX)" Foreground="{StaticResource AcentoMagenta}" FontSize="11" FontFamily="Consolas" FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </Border>
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding MolDetallePx}" IsReadOnly="True" AutoGenerateColumns="True" Background="Transparent" BorderThickness="0" VerticalScrollBarVisibility="Auto"/>
-                    </Grid>
+                    <TextBlock Grid.Column="0" Text="Seleccionar Molécula (ATC):" Foreground="{StaticResource TextoSecundario}" FontSize="12" VerticalAlignment="Center" Margin="0,0,12,0"/>
 
-                    <Border Grid.Column="1" Background="#1E1E35"/>
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding MoleculasDisponibles}" SelectedItem="{Binding MoleculaSeleccionada}" Height="36" Background="#14142A" Foreground="{StaticResource TextoPrimario}" BorderBrush="{StaticResource BorderSutil}" IsEditable="True" IsTextSearchEnabled="True"/>
 
-                    <Grid Grid.Column="2">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="#0D0D1E" Padding="16,10" BorderBrush="{StaticResource BorderSutil}" BorderThickness="0,0,0,1">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="💊" FontSize="11" Margin="0,0,7,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Ranking por Venta (UN)" Foreground="{StaticResource AcentoCian}" FontSize="11" FontFamily="Consolas" FontWeight="SemiBold"/>
-                            </StackPanel>
+                    <Button Grid.Column="2" Content="🔄 Cargar Moléculas" Style="{StaticResource BtnSecundario}" Command="{Binding CargarMoleculasCommand}" Margin="12,0,0,0" Height="36" Padding="14,0"/>
+
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Border Background="#0D1F15" BorderBrush="#2A4A35" BorderThickness="1" CornerRadius="6" Padding="10,5">
+                            <TextBlock Foreground="{StaticResource VerdeOk}" FontSize="10" FontFamily="Consolas" FontWeight="Bold">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0} moléculas cargadas">
+                                        <Binding Path="MoleculasDisponibles.Count"/>
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
                         </Border>
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding MolDetalleUn}" IsReadOnly="True" AutoGenerateColumns="True" Background="Transparent" BorderThickness="0" VerticalScrollBarVisibility="Auto"/>
-                    </Grid>
+                    </StackPanel>
                 </Grid>
             </Border>
+
+            <!-- KPIs -->
+            <Grid Grid.Row="1" Margin="0,10,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource KpiCard}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="RECETADO (PX)" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
+                        <TextBlock Text="{Binding MolTotalPx, StringFormat={}{0:N0}}" Foreground="{StaticResource AcentoMagenta}" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
+                        <TextBlock Text="unidades formuladas" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Style="{StaticResource KpiCard}" Margin="5,0">
+                    <StackPanel>
+                        <TextBlock Text="VENDIDO (UN)" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
+                        <TextBlock Text="{Binding MolTotalUn, StringFormat={}{0:N0}}" Foreground="{StaticResource AcentoCian}" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
+                        <TextBlock Text="unidades vendidas" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource KpiCard}" Margin="5,0">
+                    <StackPanel>
+                        <TextBlock Text="Laboratorio Lider en Ventas" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
+                        <TextBlock Text="{Binding MolLaboratorioLider}" Foreground="{StaticResource VerdeOk}" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
+                        <TextBlock Text="Participación" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="3" Style="{StaticResource KpiCard}" Margin="10,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="LABORATORIOS" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
+                        <TextBlock Text="{Binding MolLaboratorios}" Foreground="White" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
+                        <TextBlock Text="competidores en la molécula" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Perfil de molécula -->
+            <Border Grid.Row="2" Background="#0C0C1A" BorderBrush="#1E1E35" BorderThickness="1" CornerRadius="8" Padding="16,11" Margin="0,0,0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,0">
+                        <TextBlock Text="◈" Foreground="#7209B7" FontSize="15" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                        <TextBlock Text="PERFIL DE MOLÉCULA" Foreground="#5A5A78" FontSize="9" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Border Grid.Column="1" Background="#0F0F1E" BorderBrush="#252540" BorderThickness="1" CornerRadius="6" Margin="0,0,8,0" Padding="16,9">
+                        <StackPanel>
+                            <TextBlock Text="CANAL DOMINANTE" Foreground="#38384E" FontSize="8" FontWeight="Bold" FontFamily="Consolas" Margin="0,0,0,5"/>
+                            <TextBlock Text="{Binding MolTipoMercadoLabel}" Foreground="{Binding MolTipoMercadoBrush}" FontSize="12" FontWeight="Bold" FontFamily="Consolas"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Background="#0F0F1E" BorderBrush="#252540" BorderThickness="1" CornerRadius="6" Margin="0,0,8,0" Padding="16,9">
+                        <StackPanel>
+                            <TextBlock Text="CONCENTRACIÓN" Foreground="#38384E" FontSize="8" FontWeight="Bold" FontFamily="Consolas" Margin="0,0,0,5"/>
+                            <TextBlock Text="{Binding MolConcentracionLabel}" Foreground="{Binding MolConcentracionBrush}" FontSize="12" FontWeight="Bold" FontFamily="Consolas"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="3" Background="#0F0F1E" BorderBrush="#252540" BorderThickness="1" CornerRadius="6" Padding="16,9">
+                        <StackPanel>
+                            <TextBlock Text="DIVERSIDAD" Foreground="#38384E" FontSize="8" FontWeight="Bold" FontFamily="Consolas" Margin="0,0,0,5"/>
+                            <TextBlock Text="{Binding MolDiversidadLabel}" Foreground="{Binding MolDiversidadBrush}" FontSize="12" FontWeight="Bold" FontFamily="Consolas"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Gráficos y tablas detalladas -->
+            <Grid Grid.Row="3" Margin="15,0,15,15">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="380"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="6.5*"/>
+                    <ColumnDefinition Width="3.5*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Gráfico de barras por laboratorio -->
+                <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource PanelContenido}" Margin="0,0,6,12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Top 10 · Laboratorios por Recetado (PX)" Foreground="{StaticResource AcentoCian}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,15"/>
+                        <lvc:CartesianChart Grid.Row="1" Series="{Binding MolSeriesBarras}" XAxes="{Binding MolXAxes}" YAxes="{Binding MolYAxes}" LegendPosition="Top" Background="#FF10101C"/>
+                    </Grid>
+                </Border>
+
+                <!-- Gráfico circular de participación -->
+                <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource PanelContenido}" Margin="6,0,0,12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="{Binding MolPorcentajeTop, StringFormat='Top 8 laboratorios representan el {0} del total en ventas'}" Foreground="{StaticResource AcentoCian}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                        <lvc:PieChart Grid.Row="1" Series="{Binding MolSeriesPie}" Background="#FF10101C" LegendPosition="Bottom" LegendBackgroundPaint="{Binding LegendBackgroundPaint}" LegendTextPaint="{Binding LegendTextPaint}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Tablas de ranking (PX y UN) -->
+                <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource PanelContenido}" Padding="0" Margin="0,4,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="1"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="#0D0D1E" Padding="16,10" BorderBrush="{StaticResource BorderSutil}" BorderThickness="0,0,0,1">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🔬" FontSize="11" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Ranking por Recetado (PX)" Foreground="{StaticResource AcentoMagenta}" FontSize="11" FontFamily="Consolas" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                            <DataGrid Grid.Row="1" ItemsSource="{Binding MolDetallePx}" IsReadOnly="True" AutoGenerateColumns="True" Background="Transparent" BorderThickness="0" VerticalScrollBarVisibility="Auto"/>
+                        </Grid>
+
+                        <Border Grid.Column="1" Background="#1E1E35"/>
+
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="#0D0D1E" Padding="16,10" BorderBrush="{StaticResource BorderSutil}" BorderThickness="0,0,0,1">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="💊" FontSize="11" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Ranking por Venta (UN)" Foreground="{StaticResource AcentoCian}" FontSize="11" FontFamily="Consolas" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                            <DataGrid Grid.Row="1" ItemsSource="{Binding MolDetalleUn}" IsReadOnly="True" AutoGenerateColumns="True" Background="Transparent" BorderThickness="0" VerticalScrollBarVisibility="Auto"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
-    </Grid>
+    </ScrollViewer>
 </UserControl>

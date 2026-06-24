@@ -140,7 +140,7 @@ namespace AnalizadorMoleculas.ViewModels
             get => _molConcentracionLabel;
             set { _molConcentracionLabel = value; OnPropertyChanged(nameof(MolConcentracionLabel)); }
         }
-        
+
         private SolidColorBrush _molConcentracionBrush = new SolidColorBrush(Color.FromRgb(90, 90, 120));
         public SolidColorBrush MolConcentracionBrush
         {
@@ -198,7 +198,7 @@ namespace AnalizadorMoleculas.ViewModels
             double totalPx = registros.Sum(x => x.TotalRecetado);
             double totalUn = registros.Sum(x => x.TotalVendido);
             MolTotalPx = totalPx;
-            MolTotalUn = totalUn;            
+            MolTotalUn = totalUn;
 
             var ti = CultureInfo.GetCultureInfo("es-CO").TextInfo;
             string TitleCase(string s) => ti.ToTitleCase((s ?? "").ToLower());
@@ -251,18 +251,37 @@ namespace AnalizadorMoleculas.ViewModels
                 MolTipoMercadoBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5A5A78"));
             }
 
-            double cuotaLider = totalPx > 0 && porLab.Any()
-                ? (porLab.First().Px / totalPx) * 100
+            // Índice Herfindahl-Hirschman (HHI): suma de los cuadrados de la cuota
+            // (en %) de TODOS los laboratorios. A diferencia de mirar solo al líder,
+            // el HHI sí detecta oligopolios (ej. 2 labs con ~40% c/u) como mercados
+            // concentrados, aunque ningún laboratorio individual supere el 50%.
+            double hhi = 0;
+            if (totalUnPie > 0)
+            {
+                foreach (var lab in porLab)
+                {
+                    double sharePct = (lab.Un / totalUnPie) * 100;
+                    hhi += sharePct * sharePct;
+                }
+            }
+
+            double cuotaLider = totalUnPie > 0 && porLab.Any()
+                ? (porLab.First().Un / totalUnPie) * 100
                 : 0;
 
-            if (cuotaLider >= 70)
+            if (hhi >= 4000 || cuotaLider >= 70)
             {
                 MolConcentracionLabel = "Mercado Monopólico";
                 MolConcentracionBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF6B6B"));
             }
-            else if (cuotaLider >= 50)
+            else if (hhi >= 1800)
             {
-                MolConcentracionLabel = "Mercado Concentrado";
+                MolConcentracionLabel = "Mercado Altamente Concentrado";
+                MolConcentracionBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF8C5A"));
+            }
+            else if (hhi >= 1000)
+            {
+                MolConcentracionLabel = "Moderadamente Concentrado";
                 MolConcentracionBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFB347"));
             }
             else
@@ -352,7 +371,7 @@ namespace AnalizadorMoleculas.ViewModels
                     ToolTipLabelFormatter = _ => $"{lab.Un:N0} ({share:P1})"
                 };
             }).ToArray();
-            
+
             var dtPx = new DataTable();
             dtPx.Columns.Add("Laboratorio", typeof(string));
             dtPx.Columns.Add("⭐ Pack Top", typeof(string));

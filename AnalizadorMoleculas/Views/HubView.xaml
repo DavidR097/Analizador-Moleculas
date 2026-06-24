@@ -1,0 +1,95 @@
+﻿<UserControl x:Class="AnalizadorMoleculas.Views.HubView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1100">
+
+    <Grid Margin="30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,30">
+            <TextBlock Text="SISTEMA DE AUDITORÍA MOLECULAR" 
+                       Style="{StaticResource MaterialDesignHeadline4TextBlock}" 
+                       Foreground="#4CC9F0" FontWeight="Black"/>
+            <TextBlock Text="Panel Central de Control Analítico" 
+                       Style="{StaticResource MaterialDesignSubtitle1TextBlock}" 
+                       Foreground="#8A8A9D" Margin="2,4,0,0"/>
+        </StackPanel>
+
+        <UniformGrid Grid.Row="1" Columns="3" Rows="2" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="1050">
+
+            <materialDesign:Card Margin="12" Padding="15" Background="#1A1A2E" UniformCornerRadius="12">
+                <Button Command="{Binding NavigateCommand}" CommandParameter="espejo" 
+                        Style="{StaticResource MaterialDesignFlatButton}" Height="Auto" Foreground="White">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="AxisZArrow" Width="44" Height="44" Foreground="#7209B7" Margin="0,0,0,12"/>
+                        <TextBlock Text="Comparación Espejo" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Formuladas vs Ventas" FontSize="11" Foreground="#8A8A9D" Margin="0,6,0,0" TextAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </materialDesign:Card>
+
+            <materialDesign:Card Margin="12" Padding="15" Background="#1A1A2E" UniformCornerRadius="12">
+                <Button Command="{Binding NavigateCommand}" CommandParameter="archivos" 
+                        Style="{StaticResource MaterialDesignFlatButton}" Height="Auto" Foreground="White">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="FolderEye" Width="44" Height="44" Foreground="#4CC9F0" Margin="0,0,0,12"/>
+                        <TextBlock Text="Archivos de Auditoría" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Previsualización Archivos" FontSize="11" Foreground="#8A8A9D" Margin="0,6,0,0" TextAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </materialDesign:Card>
+
+            <materialDesign:Card Margin="12" Padding="15" Background="#1A1A2E" UniformCornerRadius="12">
+                <Button Command="{Binding NavigateCommand}" CommandParameter="metricas" 
+                        Style="{StaticResource MaterialDesignFlatButton}" Height="Auto" Foreground="White">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="ChartBar" Width="44" Height="44" Foreground="#4361EE" Margin="0,0,0,12"/>
+                        <TextBlock Text="Métricas y Gráficos" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Visualización de Datos Estadísticos" FontSize="11" Foreground="#8A8A9D" Margin="0,6,0,0" TextAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </materialDesign:Card>
+
+            <materialDesign:Card Margin="12" Padding="15" Background="#1A1A2E" UniformCornerRadius="12">
+                <Button Command="{Binding NavigateCommand}" CommandParameter="molecula" 
+                        Style="{StaticResource MaterialDesignFlatButton}" Height="Auto" Foreground="White">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Microscope" Width="44" Height="44" Foreground="#3DDC84" Margin="0,0,0,12"/>
+                        <TextBlock Text="Análisis por Molécula" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Métricas y Gráficos por Molécula" FontSize="11" Foreground="#8A8A9D" Margin="0,6,0,0" TextAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </materialDesign:Card>
+
+            <materialDesign:Card Margin="12" Padding="15" Background="#1A1A2E" UniformCornerRadius="12">
+                <Button Command="{Binding NavigateCommand}" CommandParameter="brechas" 
+                        Style="{StaticResource MaterialDesignFlatButton}" Height="Auto" Foreground="White">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="ChartGantt" Width="44" Height="44" Foreground="#F72585" Margin="0,0,0,12"/>
+                        <TextBlock Text="Análisis de Brechas" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Brecha Formuladas / Vendidas" FontSize="11" Foreground="#8A8A9D" Margin="0,6,0,0" TextAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </materialDesign:Card>
+
+            <materialDesign:Card Margin="12" Padding="15" Background="#1A1A2E" UniformCornerRadius="12">
+                <Button Command="{Binding NavigateCommand}" CommandParameter="sqlite" 
+                        Style="{StaticResource MaterialDesignFlatButton}" Height="Auto" Foreground="White">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Database" Width="44" Height="44" Foreground="#FFB703" Margin="0,0,0,12"/>
+                        <TextBlock Text="Repositorio SQLite" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Historial de archivos subidos" FontSize="11" Foreground="#8A8A9D" Margin="0,6,0,0" TextAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </materialDesign:Card>
+
+        </UniformGrid>
+    </Grid>
+</UserControl>

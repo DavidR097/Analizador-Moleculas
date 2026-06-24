@@ -110,7 +110,36 @@ namespace AnalizadorMoleculas.Services
         {
             using var package = new ExcelPackage();
             var ws = package.Workbook.Worksheets.Add("Resultado");
+
             ws.Cells["A1"].LoadFromDataTable(dt, true);
+
+            int rowCount = dt.Rows.Count;
+            int colCount = dt.Columns.Count;
+
+            if (rowCount == 0)
+            {
+                package.SaveAs(new FileInfo(ruta));
+                return;
+            }
+
+            for (int col = 1; col <= colCount; col++)
+            {
+                Type tipoColumna = dt.Columns[col - 1].DataType;
+
+                if (tipoColumna == typeof(int) ||
+                    tipoColumna == typeof(long) ||
+                    tipoColumna == typeof(double) ||
+                    tipoColumna == typeof(decimal) ||
+                    tipoColumna == typeof(float))
+                {
+                    var rangoColumna = ws.Cells[2, col, rowCount + 1, col];
+
+                    rangoColumna.Style.Numberformat.Format = "#,##0";
+                }
+            }
+
+            ws.Cells[1, 1, rowCount + 1, colCount].AutoFitColumns();
+
             package.SaveAs(new FileInfo(ruta));
         }
 
