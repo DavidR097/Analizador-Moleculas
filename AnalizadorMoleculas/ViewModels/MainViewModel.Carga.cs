@@ -12,13 +12,8 @@ using System.Windows.Input;
 
 namespace AnalizadorMoleculas.ViewModels
 {
-    /// <summary>
-    /// Carga de archivos Excel (selección de hojas, lectura vía ExcelService)
-    /// y módulo de cruce/comparación "Espejo" entre Formuladas (PX) y Ventas (UN).
-    /// </summary>
     public partial class MainViewModel
     {
-        // ---------- Datos crudos de las hojas ----------
         private DataTable _hojaFormuladas;
         private DataTable _hojaVentas;
         private DataTable _resultadoComparacion;
@@ -92,7 +87,6 @@ namespace AnalizadorMoleculas.ViewModels
 
         private bool _cargandoHojas = false;
 
-        // ---------- Lista de comparación (Espejo) ----------
         private VirtualizedObservableCollection<EspejoComparativo> _listaComparacionEspejo;
         public VirtualizedObservableCollection<EspejoComparativo> ListaComparacionEspejo
         {
@@ -149,8 +143,6 @@ namespace AnalizadorMoleculas.ViewModels
             get => _porcentajeConversion;
             set { _porcentajeConversion = value; OnPropertyChanged(nameof(PorcentajeConversion)); }
         }
-
-        // ---------- Carga de archivo ----------
         private async Task CargarExcelAsync()
         {
             var ofd = new OpenFileDialog { Filter = "Archivos Excel|*.xlsx;*.xls" };
@@ -312,8 +304,6 @@ namespace AnalizadorMoleculas.ViewModels
                 _idxAtcVent = idxAtc;
             }
         }
-
-        // ---------- Cruce "Espejo" (versión async alternativa de cruce completo) ----------
         public async Task ProcesarComparacionEspejoRealAsync()
         {
             if (_hojaFormuladas == null || _hojaVentas == null) return;
@@ -527,13 +517,12 @@ namespace AnalizadorMoleculas.ViewModels
                     if (!lista.Contains(pack) && lista.Count < 4)
                         lista.Add(pack);
                 }
-                catch { /* fila dañada — ignorar */ }
+                catch {}
             }
 
             return (dicValores, dicPacks);
         }
 
-        // ---------- Comparación tabular (lado a lado) ----------
         private void GenerarComparacion()
         {
             if (_hojaFormuladas == null || _hojaVentas == null)
@@ -626,8 +615,6 @@ namespace AnalizadorMoleculas.ViewModels
             OnPropertyChanged(nameof(ResultadoView));
             StatusMessage = $"Comparación generada: {dt.Rows.Count:N0} filas.";
         }
-
-        // ---------- Exportación / informe ----------
         private void ExportarResultado()
         {
             if (_listaComparacionEspejo == null || _listaComparacionEspejo.Count == 0)

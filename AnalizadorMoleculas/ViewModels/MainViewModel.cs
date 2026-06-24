@@ -14,11 +14,9 @@ namespace AnalizadorMoleculas.ViewModels
 {
     public partial class MainViewModel : INotifyPropertyChanged
     {
-        // ---------- Servicios y utilidades compartidas ----------
         private readonly ExcelService _excelService = new ExcelService();
         private readonly CultureInfo _culturaColombia = new CultureInfo("es-CO");
 
-        // ---------- Estado global de navegación / progreso ----------
         private string _vistaActual = "hub";
         public string VistaActual
         {
@@ -47,7 +45,6 @@ namespace AnalizadorMoleculas.ViewModels
             set { _statusMessage = value; OnPropertyChanged(nameof(StatusMessage)); }
         }
 
-        // ---------- Comandos ----------
         public ICommand CargarCommand { get; private set; }
         public ICommand GenerarComparacionCommand { get; private set; }
         public ICommand ExportarCommand { get; private set; }
@@ -78,9 +75,6 @@ namespace AnalizadorMoleculas.ViewModels
                 VistaActual = vista;
             }
         }
-
-        // ---------- Helpers genéricos de texto y conversión ----------
-        // Usados tanto por el módulo de Carga/Cruce como por Estadísticas.
 
         private double ConvertirADouble(string valorStr)
         {

@@ -250,11 +250,7 @@ namespace AnalizadorMoleculas.ViewModels
                 MolTipoMercadoLabel = "Sin datos";
                 MolTipoMercadoBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5A5A78"));
             }
-
-            // Índice Herfindahl-Hirschman (HHI): suma de los cuadrados de la cuota
-            // (en %) de TODOS los laboratorios. A diferencia de mirar solo al líder,
-            // el HHI sí detecta oligopolios (ej. 2 labs con ~40% c/u) como mercados
-            // concentrados, aunque ningún laboratorio individual supere el 50%.
+            
             double hhi = 0;
             if (totalUnPie > 0)
             {
@@ -377,43 +373,61 @@ namespace AnalizadorMoleculas.ViewModels
             dtPx.Columns.Add("⭐ Pack Top", typeof(string));
             dtPx.Columns.Add("Recetado (PX)", typeof(string));
 
+            var rankingPx = registros
+                .GroupBy(x => new
+                {
+                    Lab = x.Laboratorio ?? "No indicado",
+                    Pack = !string.IsNullOrWhiteSpace(x.PackPx) ? x.PackPx : "—"
+                })
+                .Select(g => new
+                {
+                    Lab = TitleCase(g.Key.Lab),
+                    Pack = g.Key.Pack,
+                    Px = g.Sum(x => x.TotalRecetado) // Asegúrate de usar el campo de suma exacto de tu código original
+                })
+                .OrderByDescending(x => x.Px)
+                .ToList();
+
+            // Llenamos el DataTable de la UI con el nuevo ranking detallado
+            dtPx.Rows.Clear(); // O como inicialices tu dtPx
+            foreach (var r in rankingPx)
+                dtPx.Rows.Add(r.Lab, r.Pack, r.Px.ToString("N0", _culturaColombia));
+
+            MolDetallePx = dtPx;
+
             var porLabPx = registros
                 .GroupBy(x => x.Laboratorio ?? "No indicado")
                 .Select(g => new
                 {
                     Lab = TitleCase(g.Key),
-                    Px = g.Sum(x => x.TotalRecetado),
-                    Pack = g.OrderByDescending(x => x.TotalRecetado)
-                              .Select(x => x.PackPx)
-                              .FirstOrDefault(p => !string.IsNullOrWhiteSpace(p)) ?? "—"
+                    Px = g.Sum(x => x.TotalRecetado)
                 })
                 .OrderByDescending(x => x.Px)
                 .ToList();
-
-            foreach (var r in porLabPx)
-                dtPx.Rows.Add(r.Lab, r.Pack, r.Px.ToString("N0", _culturaColombia));
-
-            MolDetallePx = dtPx;
 
             var dtUn = new DataTable();
             dtUn.Columns.Add("Laboratorio", typeof(string));
             dtUn.Columns.Add("⭐ Pack Top", typeof(string));
             dtUn.Columns.Add("Vendido (UN)", typeof(string));
 
-            var porLabUn = registros
-                .GroupBy(x => x.Laboratorio ?? "No indicado")
+            var rankingUn = registros
+                .GroupBy(x => new
+                {
+                    Lab = x.Laboratorio ?? "No indicado",
+                    Pack = !string.IsNullOrWhiteSpace(x.PackUn) ? x.PackUn : "—"
+                })
                 .Select(g => new
                 {
-                    Lab = TitleCase(g.Key),
-                    Un = g.Sum(x => x.TotalVendido),
-                    Pack = g.OrderByDescending(x => x.TotalVendido)
-                             .Select(x => x.PackUn)
-                             .FirstOrDefault(p => !string.IsNullOrWhiteSpace(p)) ?? "—"
+                    Lab = TitleCase(g.Key.Lab),
+                    Pack = g.Key.Pack,
+                    Un = g.Sum(x => x.TotalVendido)
                 })
                 .OrderByDescending(x => x.Un)
                 .ToList();
 
-            foreach (var r in porLabUn)
+            // Llenamos el DataTable de la UI con el nuevo ranking detallado
+            dtUn.Rows.Clear();
+            foreach (var r in rankingUn)
                 dtUn.Rows.Add(r.Lab, r.Pack, r.Un.ToString("N0", _culturaColombia));
 
             MolDetalleUn = dtUn;
