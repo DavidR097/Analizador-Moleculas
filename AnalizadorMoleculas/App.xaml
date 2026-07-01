@@ -6,18 +6,14 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Tus temas existentes -->
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Purple.xaml" />
 
-                <!-- Nuestros recursos personalizados -->
                 <ResourceDictionary>
-                    <!-- Convertidor -->
                     <local:ViewVisibilityConverter x:Key="ViewVisibilityConverter"/>
 
-                    <!-- Pinceles -->
                     <SolidColorBrush x:Key="BgBase"         Color="#07070F"/>
                     <SolidColorBrush x:Key="BgSidebar"      Color="#0B0B16"/>
                     <SolidColorBrush x:Key="BgCard"         Color="#10101C"/>
@@ -31,7 +27,6 @@
                     <SolidColorBrush x:Key="TextoSecundario" Color="#5A5A78"/>
                     <SolidColorBrush x:Key="TextoMuted"      Color="#38384E"/>
 
-                    <!-- Estilos (ScrollBar, DataGrid, Botones, etc.) -->
                     <Style TargetType="ScrollBar">
                         <Setter Property="Width" Value="6"/>
                         <Setter Property="Background" Value="Transparent"/>

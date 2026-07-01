@@ -13,9 +13,6 @@ using System.Windows.Shapes;
 
 namespace AnalizadorMoleculas.Views
 {
-    /// <summary>
-    /// Lógica de interacción para BrechasView.xaml
-    /// </summary>
     public partial class BrechasView : UserControl
     {
         public BrechasView()

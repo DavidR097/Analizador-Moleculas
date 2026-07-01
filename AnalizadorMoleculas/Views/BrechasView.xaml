@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
              mc:Ignorable="d" 
              d:DesignHeight="550" d:DesignWidth="900">
     <Grid>
@@ -24,26 +25,62 @@
             </Grid>
         </Border>
 
-        <materialDesign:Card Grid.Row="1" Background="#0C0C1E" UniformCornerRadius="8" Padding="10">
-            <DataGrid ItemsSource="{Binding ListaBrechas}" AutoGenerateColumns="True" IsReadOnly="True"
-                      Background="Transparent" BorderThickness="0" Foreground="White"
-                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#22223B"
-                      CanUserAddRows="False" RowBackground="#14142B" AlternatingRowBackground="#0C0C1E">
-                <DataGrid.Resources>
-                    <Style TargetType="DataGridColumnHeader">
-                        <Setter Property="Background" Value="#1A1A3A"/>
-                        <Setter Property="Foreground" Value="#F72585"/>
-                        <Setter Property="FontWeight" Value="Bold"/>
-                        <Setter Property="Padding" Value="10,8"/>
-                        <Setter Property="BorderThickness" Value="0"/>
-                    </Style>
-                    <Style TargetType="DataGridCell">
-                        <Setter Property="Padding" Value="10,6"/>
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                    </Style>
-                </DataGrid.Resources>
-            </DataGrid>
+             <materialDesign:Card Grid.Row="1" Background="#0C0C1E" UniformCornerRadius="8" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="2*" />
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Background="#0D0D1E" Padding="10" CornerRadius="4" Margin="0,0,0,8" BorderBrush="#22223B" BorderThickness="0,0,0,1">
+                        <DockPanel LastChildFill="False">
+                            <TextBlock Text="Listado de Moléculas" Foreground="#F72585" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0" DockPanel.Dock="Left"/>
+                            <TextBox Width="180" VerticalAlignment="Center" Height="28" Background="#14142A" Foreground="White" BorderBrush="#22223B" Margin="12,0,0,0" DockPanel.Dock="Right" Text=""/>
+                        </DockPanel>
+                    </Border>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding ListaBrechas}" AutoGenerateColumns="False" IsReadOnly="True"
+                          Background="Transparent" BorderThickness="0" Foreground="White"
+                          GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#22223B"
+                          CanUserAddRows="False" RowBackground="#14142B" AlternatingRowBackground="#0C0C1E"
+                          EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Molécula" Binding="{Binding Molecula}" Width="160"/>
+                        <DataGridTextColumn Header="Unidades Institucional" Binding="{Binding UnidadesInstitucionalFmt}" Width="140"/>
+                        <DataGridTextColumn Header="Unidades Comercial" Binding="{Binding UnidadesComercialFmt}" Width="140"/>
+                        <DataGridTextColumn Header="Brecha (±)" Binding="{Binding BrechaAbsolutaFmt}" Width="100"/>
+                        <DataGridTextColumn Header="Brecha Absoluta" Binding="{Binding BrechaValorAbsolutoFmt}" Width="120"/>
+                        <DataGridTextColumn Header="Índice Simetría" Binding="{Binding IndiceSimetriaFmt}" Width="110"/>
+                        <DataGridTextColumn Header="Estado" Binding="{Binding AlertaEstado}" Width="160"/>
+                    </DataGrid.Columns>
+                    <DataGrid.Resources>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background" Value="#1A1A3A"/>
+                            <Setter Property="Foreground" Value="#F72585"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="Padding" Value="10,8"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                        </Style>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="Padding" Value="10,6"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        </Style>
+                    </DataGrid.Resources>
+                    </DataGrid>
+                    </Grid>
+
+                <Grid Grid.Column="1" Margin="12,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Principales Brechas" Foreground="#F72585" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
+                        <lvc:CartesianChart Series="{Binding BrechasSeriesParticipacion}" XAxes="{Binding BrechasXAxes}" YAxes="{Binding BrechasYAxes}" LegendPosition="Top" Background="Transparent"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
         </materialDesign:Card>
     </Grid>
 </UserControl>

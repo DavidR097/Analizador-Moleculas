@@ -1,4 +1,5 @@
 ﻿using AnalizadorMoleculas.Models;
+using AnalizadorMoleculas.Services;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -14,10 +15,72 @@ namespace AnalizadorMoleculas.ViewModels
 {
     public partial class MainViewModel
     {
+        public SqliteViewModel SqliteVM { get; } = new SqliteViewModel();
+
         private DataTable _hojaFormuladas;
         private DataTable _hojaVentas;
         private DataTable _resultadoComparacion;
 
+        // Pagination / filtering for large sheets
+        private int _pageSizeHoja = 200;
+        private int _currentPageForm = 1;
+        private int _currentPageVent = 1;
+        private string _filterForm = "";
+        private string _filterVent = "";
+
+        public int PageSizeHoja
+        {
+            get => _pageSizeHoja;
+            set { _pageSizeHoja = Math.Max(10, value); OnPropertyChanged(nameof(PageSizeHoja)); UpdatePagedViews(); }
+        }
+
+        public int CurrentPageForm
+        {
+            get => _currentPageForm;
+            set
+            {
+                _currentPageForm = Math.Max(1, value);
+                OnPropertyChanged(nameof(CurrentPageForm));
+                UpdatePagedViews();
+            }
+        }
+
+        public int CurrentPageVent
+        {
+            get => _currentPageVent;
+            set
+            {
+                _currentPageVent = Math.Max(1, value);
+                OnPropertyChanged(nameof(CurrentPageVent));
+                UpdatePagedViews();
+            }
+        }
+
+        private int _totalRowsForm = 0;
+        public int TotalRowsForm { get => _totalRowsForm; set { _totalRowsForm = value; OnPropertyChanged(nameof(TotalRowsForm)); } }
+
+        private int _totalPagesForm = 1;
+        public int TotalPagesForm { get => _totalPagesForm; set { _totalPagesForm = value; OnPropertyChanged(nameof(TotalPagesForm)); } }
+
+        private int _totalRowsVent = 0;
+        public int TotalRowsVent { get => _totalRowsVent; set { _totalRowsVent = value; OnPropertyChanged(nameof(TotalRowsVent)); } }
+
+        private int _totalPagesVent = 1;
+        public int TotalPagesVent { get => _totalPagesVent; set { _totalPagesVent = value; OnPropertyChanged(nameof(TotalPagesVent)); } }
+
+        public string FilterForm
+        {
+            get => _filterForm;
+            set { _filterForm = value ?? string.Empty; OnPropertyChanged(nameof(FilterForm)); CurrentPageForm = 1; UpdatePagedViews(); }
+        }
+
+        public string FilterVent
+        {
+            get => _filterVent;
+            set { _filterVent = value ?? string.Empty; OnPropertyChanged(nameof(FilterVent)); CurrentPageVent = 1; UpdatePagedViews(); }
+        }
+
+        private readonly DatabaseService _databaseService = new DatabaseService();
         public DataTable HojaFormuladasView
         {
             get => _hojaFormuladas;
@@ -77,6 +140,19 @@ namespace AnalizadorMoleculas.ViewModels
             get => _hojaAnalisisSeleccionada;
             set { _hojaAnalisisSeleccionada = value; OnPropertyChanged(nameof(HojaAnalisisSeleccionada)); }
         }
+
+        // Pagination commands
+        public ICommand PrevPageFormCommand => _prevPageFormCommand ??= new RelayCommand(() => { if (CurrentPageForm > 1) CurrentPageForm--; });
+        private ICommand _prevPageFormCommand;
+
+        public ICommand NextPageFormCommand => _nextPageFormCommand ??= new RelayCommand(() => { CurrentPageForm++; });
+        private ICommand _nextPageFormCommand;
+
+        public ICommand PrevPageVentCommand => _prevPageVentCommand ??= new RelayCommand(() => { if (CurrentPageVent > 1) CurrentPageVent--; });
+        private ICommand _prevPageVentCommand;
+
+        public ICommand NextPageVentCommand => _nextPageVentCommand ??= new RelayCommand(() => { CurrentPageVent++; });
+        private ICommand _nextPageVentCommand;
 
         private bool _cargaEnProgreso;
         public bool CargaEnProgreso
@@ -166,9 +242,29 @@ namespace AnalizadorMoleculas.ViewModels
 
                         await CargarHojasSeleccionadasAsync();
 
+                        StatusMessage = "Guardando en base de datos...";
+
+                        string nombreArchivo = System.IO.Path.GetFileName(_rutaActual);
+                        int totalRegistros = (_hojaFormuladas?.Rows.Count ?? 0) + (_hojaVentas?.Rows.Count ?? 0);
+
+                        await _databaseService.GuardarAuditoriaCompletaAsync(
+                            nombreArchivo,
+                            totalRegistros,                                               
+                            null,                     
+                            _hojaFormuladas,
+                            _hojaVentas);
+                        if (SqliteVM.CargarHistorialSqliteCommand.CanExecute(null))
+                        {
+                            SqliteVM.CargarHistorialSqliteCommand.Execute(null);
+                        }
+
+                        StatusMessage = "✅ Archivo cargado y guardado correctamente en el historial.";
+
                     }
                     else
+                    {
                         StatusMessage = "⚠ El archivo debe tener al menos dos hojas.";
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -210,8 +306,12 @@ namespace AnalizadorMoleculas.ViewModels
 
                 _hojaFormuladas = resultado.PreviewFormuladas;
                 _hojaVentas = resultado.PreviewVentas;
-                HojaFormuladasView = resultado.PreviewFormuladas;
-                HojaVentasView = resultado.PreviewVentas;
+                // reset paging and filters (use properties so UI updates)
+                CurrentPageForm = 1;
+                CurrentPageVent = 1;
+                FilterForm = string.Empty;
+                FilterVent = string.Empty;
+                UpdatePagedViews();
                 HojaAnalisisSeleccionada = HojaSeleccionadaFormuladas;
 
                 _idxPackForm = resultado.IndicesFormuladas.IdxPack;
@@ -614,6 +714,62 @@ namespace AnalizadorMoleculas.ViewModels
             ResultadoView = dt;
             OnPropertyChanged(nameof(ResultadoView));
             StatusMessage = $"Comparación generada: {dt.Rows.Count:N0} filas.";
+        }
+        private void UpdatePagedViews()
+        {
+            try
+            {
+                // Formuladas
+                if (_hojaFormuladas != null)
+                {
+                    var allRows = _hojaFormuladas.Rows.Cast<DataRow>();
+                    if (!string.IsNullOrWhiteSpace(_filterForm))
+                    {
+                        string f = _filterForm.ToUpperInvariant();
+                        allRows = allRows.Where(r => r.ItemArray.Any(c => (c?.ToString() ?? "").ToUpperInvariant().Contains(f)));
+                    }
+                    var allList = allRows.ToList();
+                    TotalRowsForm = allList.Count;
+                    TotalPagesForm = Math.Max(1, (int)Math.Ceiling((double)TotalRowsForm / _pageSizeHoja));
+                    if (CurrentPageForm > TotalPagesForm) CurrentPageForm = TotalPagesForm;
+
+                    var tbl = _hojaFormuladas.Clone();
+                    var skip = (CurrentPageForm - 1) * _pageSizeHoja;
+                    foreach (var r in allList.Skip(skip).Take(_pageSizeHoja)) tbl.ImportRow(r);
+                    HojaFormuladasView = tbl;
+                }
+                else
+                {
+                    HojaFormuladasView = null;
+                    TotalRowsForm = 0; TotalPagesForm = 1; CurrentPageForm = 1;
+                }
+
+                // Ventas
+                if (_hojaVentas != null)
+                {
+                    var allRows = _hojaVentas.Rows.Cast<DataRow>();
+                    if (!string.IsNullOrWhiteSpace(_filterVent))
+                    {
+                        string f = _filterVent.ToUpperInvariant();
+                        allRows = allRows.Where(r => r.ItemArray.Any(c => (c?.ToString() ?? "").ToUpperInvariant().Contains(f)));
+                    }
+                    var allList = allRows.ToList();
+                    TotalRowsVent = allList.Count;
+                    TotalPagesVent = Math.Max(1, (int)Math.Ceiling((double)TotalRowsVent / _pageSizeHoja));
+                    if (CurrentPageVent > TotalPagesVent) CurrentPageVent = TotalPagesVent;
+
+                    var tbl = _hojaVentas.Clone();
+                    var skip = (CurrentPageVent - 1) * _pageSizeHoja;
+                    foreach (var r in allList.Skip(skip).Take(_pageSizeHoja)) tbl.ImportRow(r);
+                    HojaVentasView = tbl;
+                }
+                else
+                {
+                    HojaVentasView = null;
+                    TotalRowsVent = 0; TotalPagesVent = 1; CurrentPageVent = 1;
+                }
+            }
+            catch { }
         }
         private void ExportarResultado()
         {

@@ -3,6 +3,7 @@ using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
+using LiveChartsCore.Defaults;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,6 +17,9 @@ namespace AnalizadorMoleculas.ViewModels
 {
     public partial class MainViewModel
     {
+        // Limitar filas mostradas en las tablas de detalle para optimizar memoria y UI
+        private const int MaxRowsMolDetalle = 200;
+
         private ObservableCollection<string> _moleculasDisponibles = new();
         public ObservableCollection<string> MoleculasDisponibles
         {
@@ -80,6 +84,55 @@ namespace AnalizadorMoleculas.ViewModels
             set { _molSeriesBarras = value; OnPropertyChanged(nameof(MolSeriesBarras)); }
         }
 
+        private ISeries[] _molSeriesMatriz = Array.Empty<ISeries>();
+        public ISeries[] MolSeriesMatriz
+        {
+            get => _molSeriesMatriz;
+            set { _molSeriesMatriz = value; OnPropertyChanged(nameof(MolSeriesMatriz)); }
+        }
+
+        private ISeries[] _molSeriesParticipacion = Array.Empty<ISeries>();
+        public ISeries[] MolSeriesParticipacion
+        {
+            get => _molSeriesParticipacion;
+            set { _molSeriesParticipacion = value; OnPropertyChanged(nameof(MolSeriesParticipacion)); }
+        }
+
+        private ISeries[] _molSeriesTendencia = Array.Empty<ISeries>();
+        public ISeries[] MolSeriesTendencia
+        {
+            get => _molSeriesTendencia;
+            set { _molSeriesTendencia = value; OnPropertyChanged(nameof(MolSeriesTendencia)); }
+        }
+
+        private Axis[] _molXAxesEvolucion = Array.Empty<Axis>();
+        public Axis[] MolXAxesEvolucion
+        {
+            get => _molXAxesEvolucion;
+            set { _molXAxesEvolucion = value; OnPropertyChanged(nameof(MolXAxesEvolucion)); }
+        }
+
+        private Axis[] _molYAxesPorcentaje = Array.Empty<Axis>();
+        public Axis[] MolYAxesPorcentaje
+        {
+            get => _molYAxesPorcentaje;
+            set { _molYAxesPorcentaje = value; OnPropertyChanged(nameof(MolYAxesPorcentaje)); }
+        }
+
+        private Axis[] _molXAxesMatriz = Array.Empty<Axis>();
+        public Axis[] MolXAxesMatriz
+        {
+            get => _molXAxesMatriz;
+            set { _molXAxesMatriz = value; OnPropertyChanged(nameof(MolXAxesMatriz)); }
+        }
+
+        private Axis[] _molYAxesMatriz = Array.Empty<Axis>();
+        public Axis[] MolYAxesMatriz
+        {
+            get => _molYAxesMatriz;
+            set { _molYAxesMatriz = value; OnPropertyChanged(nameof(MolYAxesMatriz)); }
+        }
+
         private ISeries[] _molSeriesPie = Array.Empty<ISeries>();
         public ISeries[] MolSeriesPie
         {
@@ -113,6 +166,69 @@ namespace AnalizadorMoleculas.ViewModels
         {
             get => _molDetalleUn;
             set { _molDetalleUn = value; OnPropertyChanged(nameof(MolDetalleUn)); }
+        }
+
+        // Ranking pagination (mostrar máximo 20 registros por página)
+        private List<(string Lab, string Pack, double Value)> _rankingPxFull = new();
+        private List<(string Lab, string Pack, double Value)> _rankingUnFull = new();
+        private const int RankingPageSize = 20;
+        private int _rankingPagePx = 1;
+        private int _rankingPageUn = 1;
+        private int _rankingTotalPagesPx = 1;
+        private int _rankingTotalPagesUn = 1;
+        public int RankingTotalPagesPx { get => _rankingTotalPagesPx; set { _rankingTotalPagesPx = value; OnPropertyChanged(nameof(RankingTotalPagesPx)); } }
+        public int RankingTotalPagesUn { get => _rankingTotalPagesUn; set { _rankingTotalPagesUn = value; OnPropertyChanged(nameof(RankingTotalPagesUn)); } }
+        public int RankingPagePx
+        {
+            get => _rankingPagePx;
+            set { _rankingPagePx = Math.Max(1, value); OnPropertyChanged(nameof(RankingPagePx)); UpdateRankingPages(); }
+        }
+        public int RankingPageUn
+        {
+            get => _rankingPageUn;
+            set { _rankingPageUn = Math.Max(1, value); OnPropertyChanged(nameof(RankingPageUn)); UpdateRankingPages(); }
+        }
+
+        public ICommand PrevRankingPxCommand => _prevRankingPxCommand ??= new RelayCommand(() => { if (RankingPagePx > 1) RankingPagePx--; });
+        private ICommand _prevRankingPxCommand;
+        public ICommand NextRankingPxCommand => _nextRankingPxCommand ??= new RelayCommand(() => { RankingPagePx++; });
+        private ICommand _nextRankingPxCommand;
+
+        public ICommand PrevRankingUnCommand => _prevRankingUnCommand ??= new RelayCommand(() => { if (RankingPageUn > 1) RankingPageUn--; });
+        private ICommand _prevRankingUnCommand;
+        public ICommand NextRankingUnCommand => _nextRankingUnCommand ??= new RelayCommand(() => { RankingPageUn++; });
+        private ICommand _nextRankingUnCommand;
+
+        private void UpdateRankingPages()
+        {
+            try
+            {
+                // PX
+                var dtPx = new DataTable();
+                dtPx.Columns.Add("Laboratorio", typeof(string));
+                dtPx.Columns.Add("⭐ Pack Top", typeof(string));
+                dtPx.Columns.Add("Recetado (PX)", typeof(string));
+                RankingTotalPagesPx = Math.Max(1, (int)Math.Ceiling(_rankingPxFull.Count / (double)RankingPageSize));
+                if (RankingPagePx > RankingTotalPagesPx) RankingPagePx = RankingTotalPagesPx;
+                var skipPx = (RankingPagePx - 1) * RankingPageSize;
+                foreach (var r in _rankingPxFull.Skip(skipPx).Take(RankingPageSize))
+                    dtPx.Rows.Add(r.Lab, r.Pack, r.Value.ToString("N0", _culturaColombia));
+                MolDetallePx = dtPx;
+
+                // UN
+                var dtUn = new DataTable();
+                dtUn.Columns.Add("Laboratorio", typeof(string));
+                dtUn.Columns.Add("⭐ Pack Top", typeof(string));
+                dtUn.Columns.Add("Vendido (UN)", typeof(string));
+
+                RankingTotalPagesUn = Math.Max(1, (int)Math.Ceiling(_rankingUnFull.Count / (double)RankingPageSize));
+                if (RankingPageUn > RankingTotalPagesUn) RankingPageUn = RankingTotalPagesUn;
+                var skipUn = (RankingPageUn - 1) * RankingPageSize;
+                foreach (var r in _rankingUnFull.Skip(skipUn).Take(RankingPageSize))
+                    dtUn.Rows.Add(r.Lab, r.Pack, r.Value.ToString("N0", _culturaColombia));
+                MolDetalleUn = dtUn;
+            }
+            catch { }
         }
 
         private void InicializarMolecula()
@@ -250,7 +366,7 @@ namespace AnalizadorMoleculas.ViewModels
                 MolTipoMercadoLabel = "Sin datos";
                 MolTipoMercadoBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5A5A78"));
             }
-            
+
             double hhi = 0;
             if (totalUnPie > 0)
             {
@@ -368,6 +484,121 @@ namespace AnalizadorMoleculas.ViewModels
                 };
             }).ToArray();
 
+            // Construir Matriz Posicionamiento (dispersión) usando sólo top8 (consistente con el pie)
+            if (top8Pie.Any())
+            {
+                MolSeriesMatriz = top8Pie.Select(lab =>
+                    (ISeries)new ScatterSeries<ObservablePoint>
+                    {
+                        Name = lab.Lab,
+                        Values = new[] { new ObservablePoint(Math.Round(lab.Px, 0), Math.Round(lab.Un, 0)) },
+                        Fill = new SolidColorPaint(new SKColor(183, 37, 158, 220)),
+                        GeometrySize = 10
+                    }
+                ).ToArray();
+
+                MolXAxesMatriz = new Axis[]
+                {
+                    new Axis
+                    {
+                        Name = "Recetado (PX)",
+                        TextSize = 11,
+                        Labeler = val => val.ToString("#,##0", _culturaColombia)
+                    }
+                };
+
+                MolYAxesMatriz = new Axis[]
+                {
+                    new Axis
+                    {
+                        Name = "Vendido (UN)",
+                        TextSize = 11,
+                        Labeler = val => val.ToString("#,##0", _culturaColombia)
+                    }
+                };
+            }
+            else
+            {
+                MolSeriesMatriz = Array.Empty<ISeries>();
+                MolXAxesMatriz = Array.Empty<Axis>();
+                MolYAxesMatriz = Array.Empty<Axis>();
+            }
+
+            // Construir Participación 100% y Tendencia usando top8 (consistente con el pie)
+            if (top8Pie.Any())
+            {
+                var denomList = top8Pie.Select(t => t.Px + t.Un).ToList();
+                var instPct = top8Pie.Select((t, i) => denomList[i] > 0 ? (t.Px / denomList[i]) * 100.0 : 0.0).ToArray();
+                var comPct = top8Pie.Select((t, i) => denomList[i] > 0 ? (t.Un / denomList[i]) * 100.0 : 0.0).ToArray();
+
+                MolSeriesParticipacion = new ISeries[]
+                {
+                    new ColumnSeries<double>
+                    {
+                        Name = "Institucional",
+                        Values = instPct,
+                        Fill = new SolidColorPaint(new SKColor(181,23,158,220)),
+                        DataLabelsPaint = new SolidColorPaint(SKColors.White),
+                        DataLabelsSize = 10,
+                        DataLabelsFormatter = p => ((double)p.Coordinate.PrimaryValue).ToString("F1") + "%"
+                    },
+                    new ColumnSeries<double>
+                    {
+                        Name = "Comercial",
+                        Values = comPct,
+                        Fill = new SolidColorPaint(new SKColor(76,201,240,220)),
+                        DataLabelsPaint = new SolidColorPaint(SKColors.White),
+                        DataLabelsSize = 10,
+                        DataLabelsFormatter = p => ((double)p.Coordinate.PrimaryValue).ToString("F1") + "%"
+                    }
+                };
+
+                MolXAxesEvolucion = new Axis[]
+                {
+                    new Axis
+                    {
+                        Labels = top8Pie.Select(t => t.Lab).ToList(),
+                        LabelsRotation = -35,
+                        TextSize = 10
+                    }
+                };
+
+                MolYAxesPorcentaje = new Axis[]
+                {
+                    new Axis
+                    {
+                        TextSize = 11,
+                        Labeler = val => $"{val:0}%"
+                    }
+                };
+
+                // Tendencia (línea) usando ventas (UN) de top8
+                var ventasTop = top8Pie.Select(t => Math.Round(t.Un, 0)).ToArray();
+                MolSeriesTendencia = new ISeries[]
+                {
+                    new LineSeries<double>
+                    {
+                        Name = "Ventas (UN)",
+                        Values = ventasTop,
+                        Stroke = new SolidColorPaint(new SKColor(76,201,240,255)) { StrokeThickness = 2 },
+                        Fill = new SolidColorPaint(new SKColor(76,201,240,80)),
+                        GeometrySize = 6,
+                        DataLabelsPaint = new SolidColorPaint(SKColors.White),
+                        DataLabelsSize = 10
+                    }
+                };
+
+                // Reusar ejes de evolución para la tendencia
+                MolXAxesEvolucion = MolXAxesEvolucion;
+            }
+            else
+            {
+                MolSeriesParticipacion = Array.Empty<ISeries>();
+                MolSeriesTendencia = Array.Empty<ISeries>();
+                MolXAxesEvolucion = Array.Empty<Axis>();
+                MolYAxesPorcentaje = Array.Empty<Axis>();
+            }
+
             var dtPx = new DataTable();
             dtPx.Columns.Add("Laboratorio", typeof(string));
             dtPx.Columns.Add("⭐ Pack Top", typeof(string));
@@ -383,17 +614,15 @@ namespace AnalizadorMoleculas.ViewModels
                 {
                     Lab = TitleCase(g.Key.Lab),
                     Pack = g.Key.Pack,
-                    Px = g.Sum(x => x.TotalRecetado) // Asegúrate de usar el campo de suma exacto de tu código original
+                    Px = g.Sum(x => x.TotalRecetado) 
                 })
                 .OrderByDescending(x => x.Px)
                 .ToList();
 
-            // Llenamos el DataTable de la UI con el nuevo ranking detallado
-            dtPx.Rows.Clear(); // O como inicialices tu dtPx
-            foreach (var r in rankingPx)
-                dtPx.Rows.Add(r.Lab, r.Pack, r.Px.ToString("N0", _culturaColombia));
-
-            MolDetallePx = dtPx;
+            dtPx.Rows.Clear(); 
+            // Guardar ranking completo y preparar paginado
+            _rankingPxFull = rankingPx.Select(r => (r.Lab, r.Pack, r.Px)).ToList();
+            RankingPagePx = 1; // disparará UpdateRankingPages
 
             var porLabPx = registros
                 .GroupBy(x => x.Laboratorio ?? "No indicado")
@@ -425,12 +654,8 @@ namespace AnalizadorMoleculas.ViewModels
                 .OrderByDescending(x => x.Un)
                 .ToList();
 
-            // Llenamos el DataTable de la UI con el nuevo ranking detallado
-            dtUn.Rows.Clear();
-            foreach (var r in rankingUn)
-                dtUn.Rows.Add(r.Lab, r.Pack, r.Un.ToString("N0", _culturaColombia));
-
-            MolDetalleUn = dtUn;
+            _rankingUnFull = rankingUn.Select(r => (r.Lab, r.Pack, r.Un)).ToList();
+            RankingPageUn = 1; // disparará UpdateRankingPages
 
             StatusMessage = $"✓ {_moleculaSeleccionada} · {porLab.Count} labs · Líder: {MolLaboratorioLider} · Representación Top 8: {MolPorcentajeTop}";
         }

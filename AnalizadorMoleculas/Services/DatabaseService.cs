@@ -15,7 +15,6 @@ namespace AnalizadorMoleculas.Services
 
         public DatabaseService()
         {
-            // SOLUCIÓN PERMISOS: Guardar de forma segura en AppData\Roaming del usuario actual
             string carpetaApp = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AnalizadorMoleculas");
             if (!Directory.Exists(carpetaApp))
             {
@@ -26,7 +25,7 @@ namespace AnalizadorMoleculas.Services
             _connectionString = $"Data Source={_dbPath};Version=3;";
             InicializarBaseDatos();
         }
-
+        
         private void InicializarBaseDatos()
         {
             if (!File.Exists(_dbPath))
@@ -38,18 +37,15 @@ namespace AnalizadorMoleculas.Services
             {
                 conn.Open();
 
-                // 1. Tabla Maestra del Historial
                 string queryHistorial = @"
                     CREATE TABLE IF NOT EXISTS HistorialAuditorias (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
                         FechaRegistro TEXT NOT NULL,
                         NombreArchivo TEXT NOT NULL,
-                        TotalRegistros INTEGER NOT NULL,
-                        CoincidenciaCanales REAL NOT NULL,
+                        TotalRegistros INTEGER NOT NULL,                        
                         Observaciones TEXT
                     );";
 
-                // 2. Tabla Detalle para Hoja Formuladas
                 string queryFormuladas = @"
                     CREATE TABLE IF NOT EXISTS DatosFormuladas (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,7 +58,6 @@ namespace AnalizadorMoleculas.Services
                         FOREIGN KEY(AuditoriaId) REFERENCES HistorialAuditorias(Id) ON DELETE CASCADE
                     );";
 
-                // 3. Tabla Detalle para Hoja Ventas
                 string queryVentas = @"
                     CREATE TABLE IF NOT EXISTS DatosVentas (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,158 +71,169 @@ namespace AnalizadorMoleculas.Services
                         FOREIGN KEY(AuditoriaId) REFERENCES HistorialAuditorias(Id) ON DELETE CASCADE
                     );";
 
-                using (var cmd = new SQLiteCommand(queryHistorial, conn)) cmd.ExecuteNonQuery();
+                    using (var cmd = new SQLiteCommand(queryHistorial, conn)) cmd.ExecuteNonQuery();
+                    // Añadir índice en HistorialAuditorias para nombre de archivo y fecha para acelerar consultas y evitar duplicados cercanos
+                    using (var idxHist = new SQLiteCommand("CREATE INDEX IF NOT EXISTS idx_hist_nombre ON HistorialAuditorias(NombreArchivo);", conn)) idxHist.ExecuteNonQuery();
                 using (var cmd = new SQLiteCommand(queryFormuladas, conn)) cmd.ExecuteNonQuery();
                 using (var cmd = new SQLiteCommand(queryVentas, conn)) cmd.ExecuteNonQuery();
+
             }
         }
-
-        // MÉTODO NUEVO: Guarda en bloque todo el Excel asociado a una auditoría usando transacciones rápidas
-        public async Task GuardarAuditoriaCompletaAsync(string nombreArchivo, int totalReg, double coincidencia, string obs, DataTable hojaFormuladas, DataTable hojaVentas)
+        public async Task GuardarAuditoriaCompletaAsync(string nombreArchivo, int totalReg, string obs, DataTable hojaFormuladas, DataTable hojaVentas)
         {
             await Task.Run(() =>
             {
                 using (var conn = new SQLiteConnection(_connectionString))
                 {
                     conn.Open();
-                    // Usamos una transacción para que inserte miles de filas en 1 o 2 segundos en lugar de minutos
                     using (var trans = conn.BeginTransaction())
                     {
                         try
                         {
-                            // 1. Insertar en la cabecera
                             long auditoriaId = 0;
                             string queryInsertCabecera = @"
-                                INSERT INTO HistorialAuditorias (FechaRegistro, NombreArchivo, TotalRegistros, CoincidenciaCanales, Observaciones)
-                                VALUES (@fecha, @nombre, @total, @coincidencia, @obs);
+                                INSERT INTO HistorialAuditorias (FechaRegistro, NombreArchivo, TotalRegistros, Observaciones)
+                                VALUES (@fecha, @nombre, @total, @obs);
                                 SELECT last_insert_rowid();";
 
+                            // Insert header for the new auditoria (always insert). We'll update TotalRegistros after inserting details
                             using (var cmd = new SQLiteCommand(queryInsertCabecera, conn, trans))
                             {
                                 cmd.Parameters.AddWithValue("@fecha", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                                 cmd.Parameters.AddWithValue("@nombre", nombreArchivo);
                                 cmd.Parameters.AddWithValue("@total", totalReg);
-                                cmd.Parameters.AddWithValue("@coincidencia", coincidencia);
                                 cmd.Parameters.AddWithValue("@obs", obs ?? (object)DBNull.Value);
                                 auditoriaId = (long)cmd.ExecuteScalar();
                             }
 
-                            // 2. Insertar filas de la Hoja Formuladas
-                            if (hojaFormuladas != null)
+                            int insertedCount = 0;
+                            if (hojaFormuladas != null && hojaFormuladas.Rows.Count > 0)
                             {
-                                string queryForm = "INSERT INTO DatosFormuladas (AuditoriaId, ATC, Laboratorio, Producto, Presentacion, Unidades) VALUES (@aId, @atc, @lab, @prod, @pres, @un);";
-                                using (var cmdForm = new SQLiteCommand(queryForm, conn, trans))
-                                {
-                                    // Preparamos los parámetros reutilizables por rendimiento
-                                    cmdForm.Parameters.Add("@aId", DbType.Int64).Value = auditoriaId;
+                                string queryForm = @"
+                                    INSERT INTO DatosFormuladas (AuditoriaId, ATC, Laboratorio, Producto, Presentacion, Unidades)
+                                    VALUES (@auditoriaId, @atc, @laboratorio, @producto, @presentacion, @unidades);";
+
+                                // No-op wrapper: ensure file is saved before adding duplicate protection in a later change.
+                            // Add unique index to avoid duplicate rows for the same auditoria and same fila clave
+                            using (var idxCmd = new SQLiteCommand("CREATE UNIQUE INDEX IF NOT EXISTS idx_form_unique ON DatosFormuladas(AuditoriaId, ATC, Laboratorio, Presentacion);", conn, trans)) idxCmd.ExecuteNonQuery();
+
+                            using (var cmdForm = new SQLiteCommand(queryForm, conn, trans))
+                            {
+                                    cmdForm.Parameters.Add("@auditoriaId", DbType.Int64).Value = auditoriaId;
                                     var pAtc = cmdForm.Parameters.Add("@atc", DbType.String);
-                                    var pLab = cmdForm.Parameters.Add("@lab", DbType.String);
-                                    var pProd = cmdForm.Parameters.Add("@prod", DbType.String);
-                                    var pPres = cmdForm.Parameters.Add("@pres", DbType.String);
-                                    var pUn = cmdForm.Parameters.Add("@un", DbType.Int32);
+                                    var pLab = cmdForm.Parameters.Add("@laboratorio", DbType.String);
+                                    var pProd = cmdForm.Parameters.Add("@producto", DbType.String);
+                                    var pPres = cmdForm.Parameters.Add("@presentacion", DbType.String);
+                                    var pUn = cmdForm.Parameters.Add("@unidades", DbType.Int32);
 
                                     foreach (DataRow row in hojaFormuladas.Rows)
                                     {
-                                        pAtc.Value = row["ATC"] ?? DBNull.Value;
-                                        pLab.Value = row["Laboratorio"] ?? DBNull.Value;
-                                        pProd.Value = row["Producto"] ?? DBNull.Value;
-                                        pPres.Value = row["Presentacion"] ?? DBNull.Value;
-                                        pUn.Value = row["Unidades"] ?? 0;
-                                        cmdForm.ExecuteNonQuery();
+                                        pAtc.Value = row.Table.Columns.Contains("ATC") ? row["ATC"] : (row.Table.Columns.Contains("Molecula") ? row["Molecula"] : DBNull.Value);
+                                        pLab.Value = row.Table.Columns.Contains("Laboratorio") ? row["Laboratorio"] : (row.Table.Columns.Contains("Lab") ? row["Lab"] : DBNull.Value);
+                                        pProd.Value = row.Table.Columns.Contains("Producto") ? row["Producto"] : DBNull.Value;
+                                        pPres.Value = row.Table.Columns.Contains("Presentacion") ? row["Presentacion"] : (row.Table.Columns.Contains("Pack") ? row["Pack"] : DBNull.Value);
+                                        pUn.Value = row.Table.Columns.Contains("Unidades") ? row["Unidades"] : 0;
+
+                                        try
+                                        {
+                                            cmdForm.ExecuteNonQuery();
+                                            insertedCount++;
+                                        }
+                                        catch (SQLiteException) { /* ignorar duplicados por índice único */ }
                                     }
                                 }
                             }
 
-                            // 3. Insertar filas de la Hoja Ventas
-                            if (hojaVentas != null)
+                            if (hojaVentas != null && hojaVentas.Rows.Count > 0)
                             {
-                                string queryVnt = "INSERT INTO DatosVentas (AuditoriaId, ATC, Laboratorio, Producto, Presentacion, Unidades, Valor) VALUES (@aId, @atc, @lab, @prod, @pres, @un, @val);";
-                                using (var cmdVnt = new SQLiteCommand(queryVnt, conn, trans))
+                                string queryVentas = @"
+                                    INSERT INTO DatosVentas (AuditoriaId, ATC, Laboratorio, Producto, Presentacion, Unidades, Valor)
+                                    VALUES (@auditoriaId, @atc, @laboratorio, @producto, @presentacion, @unidades, @valor);";
+
+                                // Unique index for ventas
+                                using (var idxCmd2 = new SQLiteCommand("CREATE UNIQUE INDEX IF NOT EXISTS idx_vent_unique ON DatosVentas(AuditoriaId, ATC, Laboratorio, Presentacion);", conn, trans)) idxCmd2.ExecuteNonQuery();
+
+                                using (var cmdVentas = new SQLiteCommand(queryVentas, conn, trans))
                                 {
-                                    cmdVnt.Parameters.Add("@aId", DbType.Int64).Value = auditoriaId;
-                                    var pAtc = cmdVnt.Parameters.Add("@atc", DbType.String);
-                                    var pLab = cmdVnt.Parameters.Add("@lab", DbType.String);
-                                    var pProd = cmdVnt.Parameters.Add("@prod", DbType.String);
-                                    var pPres = cmdVnt.Parameters.Add("@pres", DbType.String);
-                                    var pUn = cmdVnt.Parameters.Add("@un", DbType.Int32);
-                                    var pVal = cmdVnt.Parameters.Add("@val", DbType.Double);
+                                    cmdVentas.Parameters.Add("@auditoriaId", DbType.Int64).Value = auditoriaId;
+                                    var pAtc = cmdVentas.Parameters.Add("@atc", DbType.String);
+                                    var pLab = cmdVentas.Parameters.Add("@laboratorio", DbType.String);
+                                    var pProd = cmdVentas.Parameters.Add("@producto", DbType.String);
+                                    var pPres = cmdVentas.Parameters.Add("@presentacion", DbType.String);
+                                    var pUn = cmdVentas.Parameters.Add("@unidades", DbType.Int32);
+                                    var pVal = cmdVentas.Parameters.Add("@valor", DbType.Double);
 
                                     foreach (DataRow row in hojaVentas.Rows)
                                     {
-                                        pAtc.Value = row["ATC"] ?? DBNull.Value;
-                                        pLab.Value = row["Laboratorio"] ?? DBNull.Value;
-                                        pProd.Value = row["Producto"] ?? DBNull.Value;
-                                        pPres.Value = row["Presentacion"] ?? DBNull.Value;
-                                        pUn.Value = row["Unidades"] ?? 0;
-                                        pVal.Value = row["Valor"] ?? 0.0;
-                                        cmdVnt.ExecuteNonQuery();
+                                        pAtc.Value = row.Table.Columns.Contains("ATC") ? row["ATC"] : (row.Table.Columns.Contains("Molecula") ? row["Molecula"] : DBNull.Value);
+                                        pLab.Value = row.Table.Columns.Contains("Laboratorio") ? row["Laboratorio"] : (row.Table.Columns.Contains("Lab") ? row["Lab"] : DBNull.Value);
+                                        pProd.Value = row.Table.Columns.Contains("Producto") ? row["Producto"] : DBNull.Value;
+                                        pPres.Value = row.Table.Columns.Contains("Presentacion") ? row["Presentacion"] : (row.Table.Columns.Contains("Pack") ? row["Pack"] : DBNull.Value);
+                                        pUn.Value = row.Table.Columns.Contains("Unidades") ? row["Unidades"] : 0;
+                                        pVal.Value = row.Table.Columns.Contains("Valor") ? row["Valor"] : 0.0;
+
+                                        try
+                                        {
+                                            cmdVentas.ExecuteNonQuery();
+                                            insertedCount++;
+                                        }
+                                        catch (SQLiteException) { /* ignorar duplicados por índice único */ }
                                     }
                                 }
                             }
+                            // Update header TotalRegistros with actual inserted count (formuladas + ventas)
+                            using (var upd = new SQLiteCommand("UPDATE HistorialAuditorias SET TotalRegistros = @total WHERE Id = @id", conn, trans))
+                            {
+                                upd.Parameters.AddWithValue("@total", insertedCount);
+                                upd.Parameters.AddWithValue("@id", auditoriaId);
+                                upd.ExecuteNonQuery();
+                            }
 
-                            trans.Commit(); // Confirmamos todos los inserts juntos
+                            trans.Commit();
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            trans.Rollback(); // Si algo falla, limpiamos para no dejar datos corruptos
-                            throw;
+                            trans.Rollback();
+                            throw new Exception("Error crítico al guardar la auditoría masiva: " + ex.Message);
                         }
                     }
                 }
             });
         }
 
-        // MÉTODO NUEVO: Recupera y reconstruye los DataTables originales a partir de un ID del historial
-        public async Task<(DataTable Formuladas, DataTable Ventas)> RecuperarAuditoriaAsync(int auditoriaId)
+        public async Task VerificarBaseDeDatosAsync()
         {
-            return await Task.Run(() =>
+            try
             {
-                DataTable dtFormuladas = new DataTable();
-                // Definir esquema idéntico al que lee tu ExcelService original
-                dtFormuladas.Columns.Add("ATC", typeof(string));
-                dtFormuladas.Columns.Add("Laboratorio", typeof(string));
-                dtFormuladas.Columns.Add("Producto", typeof(string));
-                dtFormuladas.Columns.Add("Presentacion", typeof(string));
-                dtFormuladas.Columns.Add("Unidades", typeof(int));
-
-                DataTable dtVentas = dtFormuladas.Clone();
-                dtVentas.Columns.Add("Valor", typeof(double));
-
                 using (var conn = new SQLiteConnection(_connectionString))
                 {
                     conn.Open();
 
-                    // Cargar Formuladas
-                    string queryForm = "SELECT ATC, Laboratorio, Producto, Presentacion, Unidades FROM DatosFormuladas WHERE AuditoriaId = @aId";
-                    using (var cmd = new SQLiteCommand(queryForm, conn))
+                    using (var cmd = new SQLiteCommand("SELECT COUNT(*) FROM HistorialAuditorias", conn))
                     {
-                        cmd.Parameters.AddWithValue("@aId", auditoriaId);
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                dtFormuladas.Rows.Add(reader["ATC"], reader["Laboratorio"], reader["Producto"], reader["Presentacion"], reader["Unidades"]);
-                            }
-                        }
+                        int total = Convert.ToInt32(cmd.ExecuteScalar());
+                        Console.WriteLine($"📊 Total de auditorías guardadas: {total}");
                     }
 
-                    // Cargar Ventas
-                    string queryVentas = "SELECT ATC, Laboratorio, Producto, Presentacion, Unidades, Valor FROM DatosVentas WHERE AuditoriaId = @aId";
-                    using (var cmd = new SQLiteCommand(queryVentas, conn))
+                    string query = @"
+                        SELECT Id, FechaRegistro, NombreArchivo, TotalRegistros
+                        FROM HistorialAuditorias 
+                        ORDER BY Id DESC LIMIT 5;";
+
+                    using (var cmd = new SQLiteCommand(query, conn))
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        cmd.Parameters.AddWithValue("@aId", auditoriaId);
-                        using (var reader = cmd.ExecuteReader())
+                        while (reader.Read())
                         {
-                            while (reader.Read())
-                            {
-                                dtVentas.Rows.Add(reader["ATC"], reader["Laboratorio"], reader["Producto"], reader["Presentacion"], reader["Unidades"], reader["Valor"]);
-                            }
+                            Console.WriteLine($"ID: {reader["Id"]} | Fecha: {reader["FechaRegistro"]} | Archivo: {reader["NombreArchivo"]} | Registros: {reader["TotalRegistros"]}");
                         }
                     }
                 }
-
-                return (dtFormuladas, dtVentas);
-            });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("❌ Error al leer BD: " + ex.Message);
+            }
         }
 
         public async Task<List<AuditoriaHistorial>> ObtenerHistorialAsync()
@@ -238,7 +244,7 @@ namespace AnalizadorMoleculas.Services
                 using (var conn = new SQLiteConnection(_connectionString))
                 {
                     conn.Open();
-                    string selectQuery = "SELECT Id, FechaRegistro, NombreArchivo, TotalRegistros, CoincidenciaCanales, Observaciones FROM HistorialAuditorias ORDER BY FechaRegistro DESC;";
+                    string selectQuery = "SELECT Id, FechaRegistro, NombreArchivo, TotalRegistros, Observaciones FROM HistorialAuditorias ORDER BY FechaRegistro DESC;";
                     using (var cmd = new SQLiteCommand(selectQuery, conn))
                     using (var reader = cmd.ExecuteReader())
                     {

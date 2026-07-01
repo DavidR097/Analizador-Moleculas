@@ -207,7 +207,16 @@ namespace AnalizadorMoleculas.ViewModels
             OnPropertyChanged(nameof(ParticipacionLaboratorioSeries));
 
             TotalValorFinal = Math.Round(totalGeneral, 2);
-            TotalProductos = datos.Select(x => x.Pack).Distinct().Count();
+            // TotalProductos should count distinct packs in the full cruzado, not only those with non-zero Valor
+            var datosAll = _listaComparacionEspejo
+                .Select(i => new
+                {
+                    Pack = esVentas ? i.PackUn : i.PackPx
+                })
+                .Where(x => !string.IsNullOrWhiteSpace(x.Pack))
+                .ToList();
+
+            TotalProductos = datosAll.Select(x => x.Pack).Distinct().Count();
             LaboratorioLider = topLabs.Any() ? topLabs.First().Lab : "—";
             TopAtcCodigo = porAtc.Any() ? porAtc.First().Atc : "—";
             double porcentajeTop = totalGeneral > 0 ? topLabs.Sum(l => l.Suma) / totalGeneral * 100 : 0;

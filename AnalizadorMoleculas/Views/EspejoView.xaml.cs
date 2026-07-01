@@ -13,9 +13,6 @@ using System.Windows.Shapes;
 
 namespace AnalizadorMoleculas.Views
 {
-    /// <summary>
-    /// Lógica de interacción para EspejoView.xaml
-    /// </summary>
     public partial class EspejoView : UserControl
     {
         public EspejoView()

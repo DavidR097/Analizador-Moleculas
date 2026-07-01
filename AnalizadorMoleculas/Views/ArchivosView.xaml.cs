@@ -13,9 +13,6 @@ using System.Windows.Shapes;
 
 namespace AnalizadorMoleculas.Views
 {
-    /// <summary>
-    /// Lógica de interacción para ArchivosView.xaml
-    /// </summary>
     public partial class ArchivosView : UserControl
     {
         public ArchivosView()

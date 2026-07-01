@@ -48,20 +48,7 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Column="2" Style="{StaticResource KpiCard}" Margin="5,0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="EFICACIA CONVERSIÓN" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
-                    <TextBlock Grid.Row="1" Text="{Binding PorcentajeConversion}" Foreground="{StaticResource VerdeOk}" FontSize="28" FontWeight="Black" Margin="0,6,0,0"/>
-                    <TextBlock Grid.Row="2" Text="receta → venta" Foreground="{StaticResource TextoMuted}" FontSize="10" Margin="0,2,0,0"/>
-                </Grid>
-            </Border>
-
-            <Border Grid.Column="3" Style="{StaticResource KpiCard}" Margin="10,0,0,0">
+            <Border Grid.Column="2" Style="{StaticResource KpiCard}" Margin="5,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -92,7 +79,7 @@
         <Border Grid.Row="2" Style="{StaticResource PanelContenido}" Padding="0" MinHeight="380">
             <DataGrid ItemsSource="{Binding ListaComparacionEspejo}" AutoGenerateColumns="False" IsReadOnly="True" RowHeight="34">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Código ATC" Binding="{Binding Atc}" Width="95">
+                    <DataGridTextColumn Header="Código ATC" Binding="{Binding Atc}" Width="90">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="FontFamily" Value="Consolas"/>
@@ -103,7 +90,7 @@
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
                     <DataGridTextColumn Header="Laboratorio" Binding="{Binding Laboratorio}" Width="1.4*"/>
-                    <DataGridTextColumn Header="Pack PX" Binding="{Binding PackPx}" Width="1.6*">
+                    <DataGridTextColumn Header="Pack PX" Binding="{Binding PackPx}" Width="1.2*">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Padding" Value="10,0"/>

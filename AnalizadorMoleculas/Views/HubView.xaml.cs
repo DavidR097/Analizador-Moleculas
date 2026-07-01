@@ -13,9 +13,6 @@ using System.Windows.Shapes;
 
 namespace AnalizadorMoleculas.Views
 {
-    /// <summary>
-    /// Lógica de interacción para HubView.xaml
-    /// </summary>
     public partial class HubView : UserControl
     {
         public HubView()
