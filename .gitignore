@@ -30,3 +30,10 @@ logs/
 Thumbs.db
 .DS_Store
 *.bak
+# Velopack / Releases
+Releases/
+*.nupkg
+*.zip
+assets.win.json
+RELEASES
+releases.win.json
