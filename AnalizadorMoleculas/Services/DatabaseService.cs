@@ -72,7 +72,6 @@ namespace AnalizadorMoleculas.Services
                     );";
 
                     using (var cmd = new SQLiteCommand(queryHistorial, conn)) cmd.ExecuteNonQuery();
-                    // Añadir índice en HistorialAuditorias para nombre de archivo y fecha para acelerar consultas y evitar duplicados cercanos
                     using (var idxHist = new SQLiteCommand("CREATE INDEX IF NOT EXISTS idx_hist_nombre ON HistorialAuditorias(NombreArchivo);", conn)) idxHist.ExecuteNonQuery();
                 using (var cmd = new SQLiteCommand(queryFormuladas, conn)) cmd.ExecuteNonQuery();
                 using (var cmd = new SQLiteCommand(queryVentas, conn)) cmd.ExecuteNonQuery();
@@ -96,7 +95,6 @@ namespace AnalizadorMoleculas.Services
                                 VALUES (@fecha, @nombre, @total, @obs);
                                 SELECT last_insert_rowid();";
 
-                            // Insert header for the new auditoria (always insert). We'll update TotalRegistros after inserting details
                             using (var cmd = new SQLiteCommand(queryInsertCabecera, conn, trans))
                             {
                                 cmd.Parameters.AddWithValue("@fecha", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
@@ -113,8 +111,6 @@ namespace AnalizadorMoleculas.Services
                                     INSERT INTO DatosFormuladas (AuditoriaId, ATC, Laboratorio, Producto, Presentacion, Unidades)
                                     VALUES (@auditoriaId, @atc, @laboratorio, @producto, @presentacion, @unidades);";
 
-                                // No-op wrapper: ensure file is saved before adding duplicate protection in a later change.
-                            // Add unique index to avoid duplicate rows for the same auditoria and same fila clave
                             using (var idxCmd = new SQLiteCommand("CREATE UNIQUE INDEX IF NOT EXISTS idx_form_unique ON DatosFormuladas(AuditoriaId, ATC, Laboratorio, Presentacion);", conn, trans)) idxCmd.ExecuteNonQuery();
 
                             using (var cmdForm = new SQLiteCommand(queryForm, conn, trans))
@@ -150,7 +146,6 @@ namespace AnalizadorMoleculas.Services
                                     INSERT INTO DatosVentas (AuditoriaId, ATC, Laboratorio, Producto, Presentacion, Unidades, Valor)
                                     VALUES (@auditoriaId, @atc, @laboratorio, @producto, @presentacion, @unidades, @valor);";
 
-                                // Unique index for ventas
                                 using (var idxCmd2 = new SQLiteCommand("CREATE UNIQUE INDEX IF NOT EXISTS idx_vent_unique ON DatosVentas(AuditoriaId, ATC, Laboratorio, Presentacion);", conn, trans)) idxCmd2.ExecuteNonQuery();
 
                                 using (var cmdVentas = new SQLiteCommand(queryVentas, conn, trans))
@@ -181,7 +176,6 @@ namespace AnalizadorMoleculas.Services
                                     }
                                 }
                             }
-                            // Update header TotalRegistros with actual inserted count (formuladas + ventas)
                             using (var upd = new SQLiteCommand("UPDATE HistorialAuditorias SET TotalRegistros = @total WHERE Id = @id", conn, trans))
                             {
                                 upd.Parameters.AddWithValue("@total", insertedCount);

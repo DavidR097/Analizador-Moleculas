@@ -13,13 +13,10 @@ namespace AnalizadorMoleculas
         public MainWindow()
         {
             InitializeComponent();
-            // asegurar estado inicial
             SetSidebarWidth(220);
-            // suscribirse a los cambios de VistaActual en el ViewModel para actualizar contenido
             if (this.DataContext is INotifyPropertyChanged inpc)
             {
                 inpc.PropertyChanged += MainWindow_PropertyChanged;
-                // inicializar contenido según estado actual
                 UpdateContent(((ViewModels.MainViewModel)this.DataContext).VistaActual);
             }
         }
@@ -39,7 +36,6 @@ namespace AnalizadorMoleculas
                 var vm = this.DataContext as ViewModels.MainViewModel;
                 if (vm != null)
                 {
-                    // actualizar en UI thread
                     Dispatcher.Invoke(() => UpdateContent(vm.VistaActual));
                 }
             }
@@ -70,7 +66,6 @@ namespace AnalizadorMoleculas
         private void Sidebar_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (_sidebarLocked) return;
-            // sólo colapsar si no hay interacción dentro del sidebar
             SetSidebarWidth(64);
         }
 
@@ -79,7 +74,6 @@ namespace AnalizadorMoleculas
             _sidebarLocked = !_sidebarLocked;
             if (_sidebarLocked)
             {
-                // fijar en el estado actual (si está expandido, mantener expandido; si colapsado, mantener colapsado)
                 if (_sidebarExpanded)
                     SetSidebarWidth(220);
                 else
@@ -87,8 +81,6 @@ namespace AnalizadorMoleculas
             }
             else
             {
-                // al soltar, mantener el ancho actual pero permitir hover para cambiarlo
-                // invertir el icono para reflejar acción posible
                 BtnToggleText.Text = _sidebarExpanded ? "<" : ">";
             }
         }

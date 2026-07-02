@@ -16,7 +16,6 @@ namespace AnalizadorMoleculas.ViewModels
 {
     public partial class MainViewModel
     {
-        // Limitar filas mostradas en la vista de brechas para optimizar memoria
         private const int MaxRowsBrechas = 1000;
 
         private ISeries[] _brechasSeriesParticipacion = Array.Empty<ISeries>();
@@ -156,7 +155,6 @@ namespace AnalizadorMoleculas.ViewModels
                             ? (1.0 - (brechaValorAbsoluto / maxUnidades)) * 100.0
                             : 100.0;
 
-                        // Normalizar a rango [0,100]
                         porcentajeCoincidencia = Math.Max(0.0, Math.Min(100.0, porcentajeCoincidencia));
 
                         totalDiferenciaAbsoluta += brechaValorAbsoluto;
@@ -240,7 +238,6 @@ namespace AnalizadorMoleculas.ViewModels
                                 }
                             };
 
-                            // Construir gráfica Participación (100%) - barras apiladas normalizadas
                             var denomList = topChart.Select(t => t.UnidadesInstitucional + t.UnidadesComercial).ToList();
                             var instPct = topChart.Select((t, i) => denomList[i] > 0 ? (t.UnidadesInstitucional / denomList[i]) * 100.0 : 0.0).ToArray();
                             var comPct = topChart.Select((t, i) => denomList[i] > 0 ? (t.UnidadesComercial / denomList[i]) * 100.0 : 0.0).ToArray();
@@ -302,10 +299,6 @@ namespace AnalizadorMoleculas.ViewModels
                                 }
                             };
 
-                            // Ejes para tendencia
-                            // Reusar BrechasXAxesEvolucion y BrechasYAxesPorcentaje (pero ajustar labeler para valores absolutos)
-                            // Para la tendencia usamos un eje Y numérico
-                            // Nota: BrechasYAxesPorcentaje se mantiene para la vista 100%; MolXAxesEvolucion usado por ambos
                         }
                         else
                         {
@@ -375,7 +368,6 @@ namespace AnalizadorMoleculas.ViewModels
         public double BrechaValorAbsoluto { get; set; } 
         public double IndiceSimetria { get; set; } 
 
-        // Formatted properties for UI
         public string UnidadesInstitucionalFmt => UnidadesInstitucional.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("es-CO"));
         public string UnidadesComercialFmt => UnidadesComercial.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("es-CO"));
         public string BrechaAbsolutaFmt => BrechaAbsoluta.ToString("+#,##0;-#,##0;0", System.Globalization.CultureInfo.GetCultureInfo("es-CO"));

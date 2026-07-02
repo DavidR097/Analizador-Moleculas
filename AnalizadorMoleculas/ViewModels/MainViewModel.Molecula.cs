@@ -17,7 +17,6 @@ namespace AnalizadorMoleculas.ViewModels
 {
     public partial class MainViewModel
     {
-        // Limitar filas mostradas en las tablas de detalle para optimizar memoria y UI
         private const int MaxRowsMolDetalle = 200;
 
         private ObservableCollection<string> _moleculasDisponibles = new();
@@ -203,7 +202,6 @@ namespace AnalizadorMoleculas.ViewModels
         {
             try
             {
-                // PX
                 var dtPx = new DataTable();
                 dtPx.Columns.Add("Laboratorio", typeof(string));
                 dtPx.Columns.Add("⭐ Pack Top", typeof(string));
@@ -215,7 +213,6 @@ namespace AnalizadorMoleculas.ViewModels
                     dtPx.Rows.Add(r.Lab, r.Pack, r.Value.ToString("N0", _culturaColombia));
                 MolDetallePx = dtPx;
 
-                // UN
                 var dtUn = new DataTable();
                 dtUn.Columns.Add("Laboratorio", typeof(string));
                 dtUn.Columns.Add("⭐ Pack Top", typeof(string));
@@ -484,7 +481,6 @@ namespace AnalizadorMoleculas.ViewModels
                 };
             }).ToArray();
 
-            // Construir Matriz Posicionamiento (dispersión) usando sólo top8 (consistente con el pie)
             if (top8Pie.Any())
             {
                 MolSeriesMatriz = top8Pie.Select(lab =>
@@ -524,7 +520,6 @@ namespace AnalizadorMoleculas.ViewModels
                 MolYAxesMatriz = Array.Empty<Axis>();
             }
 
-            // Construir Participación 100% y Tendencia usando top8 (consistente con el pie)
             if (top8Pie.Any())
             {
                 var denomList = top8Pie.Select(t => t.Px + t.Un).ToList();
@@ -572,7 +567,6 @@ namespace AnalizadorMoleculas.ViewModels
                     }
                 };
 
-                // Tendencia (línea) usando ventas (UN) de top8
                 var ventasTop = top8Pie.Select(t => Math.Round(t.Un, 0)).ToArray();
                 MolSeriesTendencia = new ISeries[]
                 {
@@ -588,7 +582,6 @@ namespace AnalizadorMoleculas.ViewModels
                     }
                 };
 
-                // Reusar ejes de evolución para la tendencia
                 MolXAxesEvolucion = MolXAxesEvolucion;
             }
             else
@@ -620,9 +613,8 @@ namespace AnalizadorMoleculas.ViewModels
                 .ToList();
 
             dtPx.Rows.Clear(); 
-            // Guardar ranking completo y preparar paginado
             _rankingPxFull = rankingPx.Select(r => (r.Lab, r.Pack, r.Px)).ToList();
-            RankingPagePx = 1; // disparará UpdateRankingPages
+            RankingPagePx = 1; 
 
             var porLabPx = registros
                 .GroupBy(x => x.Laboratorio ?? "No indicado")
@@ -655,8 +647,7 @@ namespace AnalizadorMoleculas.ViewModels
                 .ToList();
 
             _rankingUnFull = rankingUn.Select(r => (r.Lab, r.Pack, r.Un)).ToList();
-            RankingPageUn = 1; // disparará UpdateRankingPages
-
+            RankingPageUn = 1; 
             StatusMessage = $"✓ {_moleculaSeleccionada} · {porLab.Count} labs · Líder: {MolLaboratorioLider} · Representación Top 8: {MolPorcentajeTop}";
         }
     }

@@ -8,6 +8,7 @@
         xmlns:vm="clr-namespace:AnalizadorMoleculas.ViewModels"
         xmlns:converters="clr-namespace:AnalizadorMoleculas.Converters"
         mc:Ignorable="d"
+        ShowIconOnTitleBar="True"
         Title="Farmacol - Molecular Data Intelligence System"
         Height="800" Width="1366"
         MinHeight="700" MinWidth="1100"

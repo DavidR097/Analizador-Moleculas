@@ -207,7 +207,6 @@ namespace AnalizadorMoleculas.ViewModels
             OnPropertyChanged(nameof(ParticipacionLaboratorioSeries));
 
             TotalValorFinal = Math.Round(totalGeneral, 2);
-            // TotalProductos should count distinct packs in the full cruzado, not only those with non-zero Valor
             var datosAll = _listaComparacionEspejo
                 .Select(i => new
                 {

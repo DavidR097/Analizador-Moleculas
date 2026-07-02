@@ -21,7 +21,6 @@ namespace AnalizadorMoleculas.ViewModels
         private DataTable _hojaVentas;
         private DataTable _resultadoComparacion;
 
-        // Pagination / filtering for large sheets
         private int _pageSizeHoja = 200;
         private int _currentPageForm = 1;
         private int _currentPageVent = 1;
@@ -141,7 +140,6 @@ namespace AnalizadorMoleculas.ViewModels
             set { _hojaAnalisisSeleccionada = value; OnPropertyChanged(nameof(HojaAnalisisSeleccionada)); }
         }
 
-        // Pagination commands
         public ICommand PrevPageFormCommand => _prevPageFormCommand ??= new RelayCommand(() => { if (CurrentPageForm > 1) CurrentPageForm--; });
         private ICommand _prevPageFormCommand;
 
@@ -306,7 +304,6 @@ namespace AnalizadorMoleculas.ViewModels
 
                 _hojaFormuladas = resultado.PreviewFormuladas;
                 _hojaVentas = resultado.PreviewVentas;
-                // reset paging and filters (use properties so UI updates)
                 CurrentPageForm = 1;
                 CurrentPageVent = 1;
                 FilterForm = string.Empty;
@@ -555,7 +552,7 @@ namespace AnalizadorMoleculas.ViewModels
 
         private (Dictionary<(string atc, string lab, string prod), double> valores,
          Dictionary<(string atc, string lab, string prod), List<string>> packs)
-    MapearHojaConPacks(DataTable dt)
+        MapearHojaConPacks(DataTable dt)
         {
             var dicValores = new Dictionary<(string, string, string), double>();
             var dicPacks = new Dictionary<(string, string, string), List<string>>();
@@ -719,7 +716,6 @@ namespace AnalizadorMoleculas.ViewModels
         {
             try
             {
-                // Formuladas
                 if (_hojaFormuladas != null)
                 {
                     var allRows = _hojaFormuladas.Rows.Cast<DataRow>();
@@ -744,7 +740,6 @@ namespace AnalizadorMoleculas.ViewModels
                     TotalRowsForm = 0; TotalPagesForm = 1; CurrentPageForm = 1;
                 }
 
-                // Ventas
                 if (_hojaVentas != null)
                 {
                     var allRows = _hojaVentas.Rows.Cast<DataRow>();
