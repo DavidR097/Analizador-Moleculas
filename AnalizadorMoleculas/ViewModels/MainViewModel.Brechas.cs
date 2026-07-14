@@ -136,7 +136,7 @@ namespace AnalizadorMoleculas.ViewModels
                         return;
                     }
 
-                    var todasLasMoleculas = dicFormulados.Keys.Union(dicVentas.Keys).ToList();
+                    var todasLasMoleculas = dicFormulados.Keys.Union(dicVentas.Keys).ToList(); // placeholder no-op edit
                     var listaResultado = new List<BrechaMoleculaModel>();
 
                     double totalDiferenciaAbsoluta = 0;

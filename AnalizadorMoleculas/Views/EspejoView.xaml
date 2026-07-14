@@ -64,15 +64,23 @@
 
         <Border Grid.Row="1" Style="{StaticResource PanelContenido}" Padding="20,14">
             <Grid>
-                <StackPanel>
-                    <TextBlock Text="Consolidado Cruce Espejo · ATC × Laboratorio × Producto" Foreground="{StaticResource TextoPrimario}" FontSize="13" FontWeight="SemiBold"/>
-                    <TextBlock Text="Llave maestra: ATC III (4 dígitos) · Laboratorio saneado · Producto normalizado  —  ceros suprimidos automáticamente" Foreground="{StaticResource TextoSecundario}" FontSize="11" Margin="0,4,0,0"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Border Background="#0D1F15" BorderBrush="#2A4A35" BorderThickness="1" CornerRadius="6" Padding="10,5">
-                        <TextBlock Text="CRUCE EN MEMORIA  ●" Foreground="{StaticResource VerdeOk}" FontSize="10" FontFamily="Consolas" FontWeight="Bold"/>
-                    </Border>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Consolidado Cruce Espejo · ATC × Laboratorio × Producto" Foreground="{StaticResource TextoPrimario}" FontSize="13" FontWeight="SemiBold"/>
+                        <TextBlock Text="Llave maestra: ATC III (4 dígitos) · Laboratorio saneado · Producto normalizado  —  ceros suprimidos automáticamente" Foreground="{StaticResource TextoSecundario}" FontSize="11" Margin="0,4,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <TextBox Width="220" Height="30" VerticalAlignment="Center" Margin="0,0,8,0" ToolTip="Filtrar por ATC, laboratorio, producto o pack"
+                                 Text="{Binding FiltroEspejo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Border Background="#0D1F15" BorderBrush="#2A4A35" BorderThickness="1" CornerRadius="6" Padding="10,5" VerticalAlignment="Center">
+                            <TextBlock Text="CRUCE EN MEMORIA  ●" Foreground="{StaticResource VerdeOk}" FontSize="10" FontFamily="Consolas" FontWeight="Bold"/>
+                        </Border>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Border>
 

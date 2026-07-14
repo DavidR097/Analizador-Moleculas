@@ -152,7 +152,6 @@ namespace AnalizadorMoleculas.Services
             var headers = LeerEncabezados(ws, colCount);
             var indices = DetectarIndices(headers);
             var preview = CrearPreview(headers);
-            int columnaValor = Math.Min(MaxCols, colCount);
             var registros = new Dictionary<(string atc, string lab, string prod), List<RegistroHoja>>();
             int filasConDatos = 0;
 
@@ -177,13 +176,13 @@ namespace AnalizadorMoleculas.Services
                 string atc = atcRaw.Length >= 4 ? atcRaw[..4] : atcRaw;
                 if (string.IsNullOrWhiteSpace(atc)) atc = "SIN ATC";
 
-                string lab = NormalizarTextoAbsoluto(CellToString(ws.Cells[row, indices.IdxLab + 1].Value));
+                string lab = NormalizarLaboratorio(CellToString(ws.Cells[row, indices.IdxLab + 1].Value));
                 string prod = ObtenerPrefijoProducto(CellToString(ws.Cells[row, indices.IdxProd + 1].Value));
                 string pack = CellToString(ws.Cells[row, indices.IdxPack + 1].Value);
                 if (string.IsNullOrWhiteSpace(pack)) pack = "SIN PACK";
 
                 var llave = (atc, lab, prod);
-                double valor = CellToDouble(ws.Cells[row, columnaValor].Value);
+                double valor = CellToDouble(ws.Cells[row, indices.IdxValor + 1].Value);
 
                 if (!registros.TryGetValue(llave, out var lista))
                 {
@@ -346,7 +345,9 @@ namespace AnalizadorMoleculas.Services
                                  .Replace(" LABORATORIOS ", " ")
                                  .Replace(" LABORATORIO ", " ")
                                  .Replace(" LABS ", " ")
-                                 .Replace(" LAB ", " ");
+                                 .Replace(" LAB ", " ")
+                                 .Replace(" PHARMA ", " ");
+
 
             return Regex.Replace(resultado, @"\s+", " ").Trim();
         }
@@ -392,7 +393,78 @@ namespace AnalizadorMoleculas.Services
             string limpio = NormalizarTextoAbsoluto(pack);
             var palabras = limpio.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-            return palabras.Length > 0 ? palabras[0] : "SIN_PACK";   
+            return palabras.Length > 0 ? palabras[0] : "SIN_PACK";
+        }
+
+        private static string NormalizarLaboratorio(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return "SIN_DATO";
+
+            string resultado = texto.ToUpperInvariant().Trim();
+            resultado = resultado.Replace("\u00A0", " ");
+
+            string textoNormalizado = resultado.Normalize(NormalizationForm.FormD);
+            StringBuilder sb = new StringBuilder();
+            foreach (char c in textoNormalizado)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                    sb.Append(c);
+            }
+            resultado = sb.ToString().Normalize(NormalizationForm.FormC);
+
+            resultado = resultado.Replace(".", "").Replace(",", "").Replace("-", " ");
+            resultado = Regex.Replace(resultado, @"\s+", " ").Trim();
+
+            resultado = resultado
+                .Replace(" LABORATORIOS ", " ")
+                .Replace(" LABORATORIO ", " ")
+                .Replace(" LABS ", " ")
+                .Replace(" LAB ", " ")
+                .Replace(" PHARMA ", " ")
+                .Replace(" FARMACEUTICA ", " ")
+                .Replace(" FARMACEUTICOS ", " ")
+                .Replace(" FARMACÉUTICA ", " ")
+                .Replace(" FARMACÉUTICOS ", " ")
+                .Replace(" SA ", " ")
+                .Replace(" SAS ", " ")
+                .Replace(" S A ", " ")
+                .Replace(" S A S ", " ")
+                .Replace(" LTDA ", " ")
+                .Replace(" LIMITADA ", " ")
+                .Replace(" INC ", " ")
+                .Replace(" CORPORATION ", " ")
+                .Replace(" CORP ", " ")
+                .Replace(" COLOMBIA", " ")
+                .Replace(" OF AMERICA", " ")
+                .Replace(" GROUP ", " ")
+                .Replace(" LABORATORI ", " ")
+                .Replace(" PHARMACEUTI ", " ")
+                .Replace(" SPA ", " ")
+                .Replace(" COMPANY ", " ")
+                .Replace(" CB ", " ")
+                .Replace(" S ", " ")
+                .Replace(" COL ", " ");
+
+            resultado = resultado
+                .Replace("PISA FARMACEUTICA", "PISA")
+                .Replace("ICOM PHARMA", "ICOM")
+                .Replace("FLORIVEL PHARMACE", "FLORIVEL PHARMACEUTICAL")
+                .Replace("PHARMAZEN HEALTHC", "PHARMAZEN HEALTHCARE")
+                .Replace("LIMINAL THERAP", "LIMINAL THERAPEUT");
+
+            var palabrasGenericas = new[] { "FARMACEUTICA", "FARMACEUTICOS", "PHARMA", "LABORATORIOS",
+                                   "LABORATORIO", "LABS", "LAB", "SA", "SAS", "LTDA", "INC", "CORP", "GROUP", "COMPANY" };
+
+            var partes = resultado.Split(' ').ToList();
+            while (partes.Count > 1 && palabrasGenericas.Contains(partes.Last()))
+            {
+                partes.RemoveAt(partes.Count - 1);
+            }
+
+            resultado = string.Join(" ", partes).Trim();
+
+            return Regex.Replace(resultado, @"\s+", " ").Trim();
         }
     }
 

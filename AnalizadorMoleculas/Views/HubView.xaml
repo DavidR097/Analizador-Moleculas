@@ -22,7 +22,7 @@
                        Foreground="#8A8A9D" Margin="2,4,0,0"/>
         </StackPanel>
 
-        <UniformGrid Grid.Row="1" Columns="3" Rows="2" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="1050">
+        <UniformGrid Grid.Row="1" Columns="4" Rows="2" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="1050">
 
             <materialDesign:Card Margin="12" Padding="15" Background="#1A1A2E" UniformCornerRadius="12">
                 <Button Command="{Binding NavigateCommand}" CommandParameter="espejo" 
@@ -69,6 +69,17 @@
             </materialDesign:Card>
 
             <materialDesign:Card Margin="12" Padding="15" Background="#1A1A2E" UniformCornerRadius="12">
+                <Button Command="{Binding NavigateCommand}" CommandParameter="laboratorio" 
+                        Style="{StaticResource MaterialDesignFlatButton}" Height="Auto" Foreground="White">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Factory" Width="44" Height="44" Foreground="#B5179E" Margin="0,0,0,12"/>
+                        <TextBlock Text="Análisis por Laboratorio" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Métricas y Gráficos por Laboratorio" FontSize="11" Foreground="#8A8A9D" Margin="0,6,0,0" TextAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </materialDesign:Card>
+
+            <materialDesign:Card Margin="12" Padding="15" Background="#1A1A2E" UniformCornerRadius="12">
                 <Button Command="{Binding NavigateCommand}" CommandParameter="brechas" 
                         Style="{StaticResource MaterialDesignFlatButton}" Height="Auto" Foreground="White">
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
@@ -89,7 +100,6 @@
                     </StackPanel>
                 </Button>
             </materialDesign:Card>
-
         </UniformGrid>
     </Grid>
 </UserControl>

@@ -9,7 +9,7 @@
         xmlns:converters="clr-namespace:AnalizadorMoleculas.Converters"
         mc:Ignorable="d"
         ShowIconOnTitleBar="True"
-        Title="Farmacol - Molecular Data Intelligence System"
+        Title="Molecular Data Intelligence System"
         Height="800" Width="1366"
         MinHeight="700" MinWidth="1100"
         WindowStartupLocation="CenterScreen"
@@ -26,6 +26,8 @@
 
     <mah:MetroWindow.Resources>
         <converters:WidthToVisibilityConverter x:Key="WidthToVisibilityConverter" Threshold="120"/>
+        <converters:ViewEqualsConverter x:Key="ViewEqualsConverter"/>
+        <converters:InverseWidthToVisibilityConverter x:Key="InverseWidthToVisibilityConverter" Threshold="120"/>
     </mah:MetroWindow.Resources>
 
     <Grid x:Name="RootGrid">
@@ -45,97 +47,114 @@
 
                 <Grid Grid.Row="0" Margin="12,18,12,18">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
+                    <Border Grid.Column="0" Width="36" Height="36" Background="#7209B7" CornerRadius="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="F" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center"
+                                Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}">
                         <TextBlock Text="FARMACOL" Foreground="White" FontSize="18" FontWeight="Black" FontFamily="Segoe UI"/>
                         <Border Margin="0,6,0,0" Height="1" Background="{StaticResource BorderSutil}"/>
                         <TextBlock Text="INTELLIGENCE MODULE" Foreground="{StaticResource AcentoMagenta}" FontSize="9" FontWeight="Bold" FontFamily="Consolas" Margin="0,6,0,0"/>
                     </StackPanel>
-
                 </Grid>
 
                 <StackPanel Grid.Row="1" Margin="0,8,0,0">
-                    <TextBlock Text="PRINCIPAL" Foreground="{StaticResource TextoMuted}" FontSize="9" FontWeight="Bold" FontFamily="Consolas" Margin="26,0,0,8"/>
+                    <TextBlock Text="PRINCIPAL" Foreground="{StaticResource TextoMuted}" FontSize="9" FontWeight="Bold" FontFamily="Consolas" Margin="26,0,0,8"
+                               Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
 
-                    <RadioButton Style="{StaticResource NavItem}" IsChecked="True" Command="{Binding NavigateCommand}" CommandParameter="hub" x:Name="NavHub">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🏠" FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Home" VerticalAlignment="Center" 
-                                       Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
-                        </StackPanel>
+                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="hub" x:Name="NavHub"
+                                 IsChecked="{Binding VistaActual, Converter={StaticResource ViewEqualsConverter}, ConverterParameter=hub, Mode=TwoWay}"
+                                 Tag="🏠" ToolTip="Home">
+                        <TextBlock Text="Home" VerticalAlignment="Center"
+                                   Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </RadioButton>
 
-                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="espejo" x:Name="NavEspejo">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⇌" FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Comparación Espejo" VerticalAlignment="Center"/>
-                        </StackPanel>
+                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="espejo" x:Name="NavEspejo"
+                                 IsChecked="{Binding VistaActual, Converter={StaticResource ViewEqualsConverter}, ConverterParameter=espejo, Mode=TwoWay}"
+                                 Tag="⇌" ToolTip="Comparación Espejo">
+                        <TextBlock Text="Comparación Espejo" VerticalAlignment="Center"
+                                   Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </RadioButton>
 
-                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="archivos" x:Name="NavArchivos">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="📂" FontSize="13" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Archivos de Auditoría" VerticalAlignment="Center"
-                                       Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
-                        </StackPanel>
+                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="archivos" x:Name="NavArchivos"
+                                 IsChecked="{Binding VistaActual, Converter={StaticResource ViewEqualsConverter}, ConverterParameter=archivos, Mode=TwoWay}"
+                                 Tag="📂" ToolTip="Archivos de Auditoría">
+                        <TextBlock Text="Archivos de Auditoría" VerticalAlignment="Center"
+                                   Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </RadioButton>
 
-                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="metricas" x:Name="NavMetricas">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="📊" FontSize="13" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Métricas y Gráficos" VerticalAlignment="Center"
-                                       Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
-                        </StackPanel>
+                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="metricas" x:Name="NavMetricas"
+                                 IsChecked="{Binding VistaActual, Converter={StaticResource ViewEqualsConverter}, ConverterParameter=metricas, Mode=TwoWay}"
+                                 Tag="📊" ToolTip="Métricas y Gráficos">
+                        <TextBlock Text="Métricas y Gráficos" VerticalAlignment="Center"
+                                   Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </RadioButton>
 
-                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="molecula" x:Name="NavMolecula">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🔬" FontSize="13" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Análisis por Molécula" VerticalAlignment="Center"
-                                       Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
-                        </StackPanel>
+                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="molecula" x:Name="NavMolecula"
+                                 IsChecked="{Binding VistaActual, Converter={StaticResource ViewEqualsConverter}, ConverterParameter=molecula, Mode=TwoWay}"
+                                 Tag="🔬" ToolTip="Análisis por Molécula">
+                        <TextBlock Text="Análisis por Molécula" VerticalAlignment="Center"
+                                   Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </RadioButton>
 
-                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="brechas" x:Name="NavBrechas">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⚠" FontSize="13" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Brechas de Información" VerticalAlignment="Center"
-                                       Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
-                        </StackPanel>
+                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="laboratorio" x:Name="NavLaboratorio"
+                                 IsChecked="{Binding VistaActual, Converter={StaticResource ViewEqualsConverter}, ConverterParameter=laboratorio, Mode=TwoWay}"
+                                 Tag="🏭" ToolTip="Análisis por Laboratorio">
+                        <TextBlock Text="Análisis por Laboratorio" VerticalAlignment="Center"
+                                   Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </RadioButton>
 
-                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="sqlite" x:Name="NavSqlite">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="💾" FontSize="13" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Base de Datos Local" VerticalAlignment="Center"
-                                       Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
-                        </StackPanel>
+                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="brechas" x:Name="NavBrechas"
+                                 IsChecked="{Binding VistaActual, Converter={StaticResource ViewEqualsConverter}, ConverterParameter=brechas, Mode=TwoWay}"
+                                 Tag="⚠" ToolTip="Brechas de Información">
+                        <TextBlock Text="Brechas de Información" VerticalAlignment="Center"
+                                   Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
+                    </RadioButton>
+
+                    <RadioButton Style="{StaticResource NavItem}" Command="{Binding NavigateCommand}" CommandParameter="sqlite" x:Name="NavSqlite"
+                                 IsChecked="{Binding VistaActual, Converter={StaticResource ViewEqualsConverter}, ConverterParameter=sqlite, Mode=TwoWay}"
+                                 Tag="💾" ToolTip="Base de Datos Local">
+                        <TextBlock Text="Base de Datos Local" VerticalAlignment="Center"
+                                   Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
                     </RadioButton>
 
                     <Border Height="1" Background="{StaticResource BorderSutil}" Margin="20,16"/>
 
-                    <TextBlock Text="ACCIONES" Foreground="{StaticResource TextoMuted}" FontSize="9" FontWeight="Bold" FontFamily="Consolas" Margin="26,0,0,8"/>
+                    <TextBlock Text="ACCIONES" Foreground="{StaticResource TextoMuted}" FontSize="9" FontWeight="Bold" FontFamily="Consolas" Margin="26,0,0,8"
+                               Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
 
-                    <Button Style="{StaticResource BtnPrimario}" Content="▲  Cargar Excel" Command="{Binding CargarCommand}" Margin="14,4" Height="38"/>
-                    <Button Style="{StaticResource BtnSecundario}" Content="↓  Exportar Resultado" Command="{Binding ExportarCommand}" Margin="14,4" Height="38"/>
+                    <Button Style="{StaticResource BtnPrimario}" Command="{Binding CargarCommand}" Margin="14,4" Height="38"
+                            Tag="▲" ToolTip="Cargar Excel">
+                        <TextBlock Text="Cargar Excel" VerticalAlignment="Center"
+                                   Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
+                    </Button>
+                    <Button Style="{StaticResource BtnSecundario}" Command="{Binding ExportarCommand}" Margin="14,4" Height="38"
+                            Tag="↓" ToolTip="Exportar Resultado">
+                        <TextBlock Text="Exportar Resultado" VerticalAlignment="Center"
+                                   Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}"/>
+                    </Button>
                 </StackPanel>
 
-                    <Border Grid.Row="2" BorderBrush="{StaticResource BorderSutil}" BorderThickness="0,1,0,0" Padding="20,14">
+                <Border Grid.Row="2" BorderBrush="{StaticResource BorderSutil}" BorderThickness="0,1,0,0" Padding="16,14">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontFamily="Consolas" TextWrapping="Wrap" MaxWidth="140"/>
-                            <TextBlock Text="v2.0 · Aprendiz SENA" Foreground="{StaticResource TextoMuted}" FontSize="9" FontFamily="Consolas" Margin="0,6,0,0"/>
+                        <StackPanel Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource WidthToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="7" Height="7" Fill="{StaticResource AcentoMagenta}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Estado" Foreground="{StaticResource TextoMuted}" FontSize="9" FontWeight="Bold" FontFamily="Consolas"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextoSecundario}" FontSize="10" FontFamily="Consolas"
+                                       TextWrapping="Wrap" MaxHeight="70" TextTrimming="CharacterEllipsis" Margin="0,6,0,0"/>
+                            <TextBlock Text="v2.1.0 · Aprendiz SENA" Foreground="{StaticResource TextoMuted}" FontSize="9" FontFamily="Consolas" Margin="0,8,0,0"/>
                         </StackPanel>
-                        <Button x:Name="BtnToggleSidebar" Grid.Column="1" Width="26" Height="26" Margin="6,0,0,0" VerticalAlignment="Top" Click="BtnToggleSidebar_Click"
-                                Background="Transparent" BorderBrush="{x:Null}" FontSize="14" ToolTip="Fijar/Desfijar sidebar">
-                            <TextBlock x:Name="BtnToggleText" Text=">" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Button>
+
+                        <Border Visibility="{Binding ActualWidth, ElementName=Sidebar, Converter={StaticResource InverseWidthToVisibilityConverter}}"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                ToolTip="{Binding StatusMessage}">
+                            <Ellipse Width="9" Height="9" Fill="{StaticResource AcentoMagenta}"/>
+                        </Border>
                     </Grid>
                 </Border>
             </Grid>
@@ -150,7 +169,8 @@
             <Border Grid.Row="0" Background="#09091A" BorderBrush="{StaticResource BorderSutil}" BorderThickness="0,0,0,1" Padding="24,0">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock x:Name="TituloVista" Text="Análisis Comparativo" Foreground="{StaticResource TextoPrimario}" FontSize="14" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="TituloVista" Foreground="{StaticResource TextoPrimario}" FontSize="14" FontWeight="SemiBold"
+                                   Text="{Binding TituloVista}"/>
                         <Border Background="#1A0A2E" CornerRadius="4" Padding="8,3" Margin="12,0,0,0" VerticalAlignment="Center">
                             <TextBlock Text="LIVE" Foreground="{StaticResource AcentoMagenta}" FontSize="10" FontWeight="Bold" FontFamily="Consolas"/>
                         </Border>

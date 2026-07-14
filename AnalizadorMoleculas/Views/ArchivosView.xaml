@@ -49,6 +49,7 @@
                                 <TextBlock Text="Formuladas:" Foreground="{StaticResource TextoSecundario}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                 <TextBox Width="200" Height="30" Background="#14142A" Foreground="White" BorderBrush="{StaticResource BorderSutil}" Margin="0,0,8,0"
                                          ToolTip="Filtrar Formuladas" Text="{Binding FilterForm, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button Content="Cargar" Command="{Binding CargarCommand}" Height="30" Margin="6,0,0,0" />
                                 <Button Content="◀" Command="{Binding PrevPageFormCommand}" Height="30" Margin="0,0,6,0"/>
                                 <TextBlock VerticalAlignment="Center" Foreground="White" Text="{Binding CurrentPageForm}" Margin="4,0"/>
                                 <TextBlock VerticalAlignment="Center" Foreground="{StaticResource TextoSecundario}" Text="/" Margin="2,0"/>
@@ -60,6 +61,7 @@
                                 <TextBlock Text="Ventas:" Foreground="{StaticResource TextoSecundario}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                 <TextBox Width="200" Height="30" Background="#14142A" Foreground="White" BorderBrush="{StaticResource BorderSutil}" Margin="0,0,8,0"
                                          ToolTip="Filtrar Ventas" Text="{Binding FilterVent, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button Content="Eliminar" Command="{Binding EliminarArchivoCommand}" Height="30" Margin="6,0,0,0" />
                                 <Button Content="◀" Command="{Binding PrevPageVentCommand}" Height="30" Margin="0,0,6,0"/>
                                 <TextBlock VerticalAlignment="Center" Foreground="White" Text="{Binding CurrentPageVent}" Margin="4,0"/>
                                 <TextBlock VerticalAlignment="Center" Foreground="{StaticResource TextoSecundario}" Text="/" Margin="2,0"/>

@@ -26,7 +26,6 @@ namespace AnalizadorMoleculas
             var col = RootGrid.ColumnDefinitions[0];
             col.Width = new GridLength(width);
             _sidebarExpanded = width > 100;
-            BtnToggleText.Text = _sidebarExpanded ? "<" : ">";
         }
 
         private void MainWindow_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -50,9 +49,10 @@ namespace AnalizadorMoleculas
                 case "espejo": ContentHost.Content = new EspejoView(); break;
                 case "archivos": ContentHost.Content = new ArchivosView(); break;
                 case "metricas": ContentHost.Content = new MetricasView(); break;
-                case "molecula": ContentHost.Content = new MoleculaView(); break;
+                case "molecula": ContentHost.Content = new MoleculaView(); break;                
                 case "brechas": ContentHost.Content = new BrechasView(); break;
                 case "sqlite": ContentHost.Content = new SqliteView(); break;
+                case "laboratorio": ContentHost.Content = new LaboratorioView(); break;
                 default: ContentHost.Content = new HubView(); break;
             }
         }
@@ -74,14 +74,7 @@ namespace AnalizadorMoleculas
             _sidebarLocked = !_sidebarLocked;
             if (_sidebarLocked)
             {
-                if (_sidebarExpanded)
-                    SetSidebarWidth(220);
-                else
-                    SetSidebarWidth(64);
-            }
-            else
-            {
-                BtnToggleText.Text = _sidebarExpanded ? "<" : ">";
+                SetSidebarWidth(220);
             }
         }
     }

@@ -21,7 +21,14 @@ namespace AnalizadorMoleculas.ViewModels
         public string VistaActual
         {
             get => _vistaActual;
-            set { _vistaActual = value; OnPropertyChanged(nameof(VistaActual)); }
+            set { _vistaActual = value; OnPropertyChanged(nameof(VistaActual)); UpdateTituloVista(); }
+        }
+
+        private string _tituloVista = "Análisis Comparativo";
+        public string TituloVista
+        {
+            get => _tituloVista;
+            set { _tituloVista = value; OnPropertyChanged(nameof(TituloVista)); }
         }
 
         private Visibility _progressBarVisibility = Visibility.Collapsed;
@@ -53,6 +60,7 @@ namespace AnalizadorMoleculas.ViewModels
         public ICommand ExportarEstadisticasCommand { get; private set; }
         public ICommand NavigateCommand { get; private set; }
 
+
         public MainViewModel()
         {
             CargarCommand = new RelayCommand(async () => await CargarExcelAsync());
@@ -62,6 +70,8 @@ namespace AnalizadorMoleculas.ViewModels
             CalcularEstadisticasCommand = new RelayCommand(CalcularEstadisticas);
             ExportarEstadisticasCommand = new RelayCommand(ExportarEstadisticas, () => _estadisticasView != null);
             NavigateCommand = new RelayCommand<string>(Navegar);
+            CargarListaLaboratorios(); 
+            InicializarLaboratorio();
 
             NombresHojas = new ObservableCollection<string>();
             StatusMessage = "Listo. Carga tu archivo Excel para comenzar.";
@@ -73,6 +83,22 @@ namespace AnalizadorMoleculas.ViewModels
             if (!string.IsNullOrEmpty(vista))
             {
                 VistaActual = vista;
+            }
+        }
+
+        private void UpdateTituloVista()
+        {
+            switch ((VistaActual ?? "hub").ToLowerInvariant())
+            {
+                case "hub": TituloVista = "Análisis Comparativo"; break;
+                case "espejo": TituloVista = "Comparación Espejo"; break;
+                case "archivos": TituloVista = "Archivos de Auditoría"; break;
+                case "metricas": TituloVista = "Métricas y Gráficas"; break;
+                case "molecula": TituloVista = "Análisis por Molécula"; break;
+                case "laboratorio": TituloVista = "Análisis por Laboratorio"; break;
+                case "brechas": TituloVista = "Brechas de Información"; break;
+                case "sqlite": TituloVista = "Base de Datos Local"; break;
+                default: TituloVista = "Análisis Comparativo"; break;
             }
         }
 

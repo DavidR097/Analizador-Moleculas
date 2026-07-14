@@ -133,7 +133,6 @@
                         <Setter Property="Foreground" Value="White"/>
                         <Setter Property="FontWeight" Value="SemiBold"/>
                         <Setter Property="FontSize" Value="12"/>
-                        <Setter Property="Padding" Value="20,10"/>
                         <Setter Property="BorderThickness" Value="0"/>
                         <Setter Property="Height" Value="40"/>
                         <Setter Property="Cursor" Value="Hand"/>
@@ -147,7 +146,15 @@
                                                 <GradientStop Color="#B5179E" Offset="1"/>
                                             </LinearGradientBrush>
                                         </Border.Background>
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="40"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{TemplateBinding Tag}" FontSize="13"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,14,0"/>
+                                        </Grid>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
@@ -169,7 +176,6 @@
                         <Setter Property="Foreground" Value="{StaticResource AcentoCian}"/>
                         <Setter Property="FontWeight" Value="SemiBold"/>
                         <Setter Property="FontSize" Value="12"/>
-                        <Setter Property="Padding" Value="20,10"/>
                         <Setter Property="BorderThickness" Value="1"/>
                         <Setter Property="Height" Value="40"/>
                         <Setter Property="Cursor" Value="Hand"/>
@@ -177,7 +183,15 @@
                             <Setter.Value>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="Root" Background="Transparent" BorderBrush="#4CC9F0" BorderThickness="1" CornerRadius="6">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="40"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{TemplateBinding Tag}" FontSize="13"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,14,0"/>
+                                        </Grid>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
@@ -196,21 +210,28 @@
                         <Setter Property="Foreground" Value="{StaticResource TextoSecundario}"/>
                         <Setter Property="FontSize" Value="12"/>
                         <Setter Property="FontWeight" Value="SemiBold"/>
-                        <Setter Property="Padding" Value="16,0"/>
                         <Setter Property="Height" Value="46"/>
                         <Setter Property="Cursor" Value="Hand"/>
                         <Setter Property="GroupName" Value="NavGroup"/>
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="RadioButton">
-                                    <Border x:Name="Root" Background="Transparent" CornerRadius="8" Margin="10,2" Padding="{TemplateBinding Padding}">
+                                    <Border x:Name="Root" Background="Transparent" CornerRadius="8" Margin="8,2">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="28"/>
+                                                <ColumnDefinition Width="42"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
-                                            <Border x:Name="Indicator" Grid.Column="0" Width="3" Height="24" HorizontalAlignment="Left" CornerRadius="2" Background="Transparent"/>
-                                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center"/>
+
+                                            <Border x:Name="Indicator" Grid.Column="0" Width="3" Height="22"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    CornerRadius="2" Background="Transparent"/>
+
+                                            <TextBlock x:Name="IconText" Grid.Column="0" Text="{TemplateBinding Tag}"
+                                                       FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Foreground="{TemplateBinding Foreground}"/>
+
+                                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                         </Grid>
                                     </Border>
                                     <ControlTemplate.Triggers>

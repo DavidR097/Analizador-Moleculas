@@ -25,6 +25,17 @@ namespace AnalizadorMoleculas.Services
             _connectionString = $"Data Source={_dbPath};Version=3;";
             InicializarBaseDatos();
         }
+        private static string ComputeQuickHash(string filePath)
+        {
+            try
+            {
+                if (!File.Exists(filePath)) return null;
+                var fi = new FileInfo(filePath);
+                // quick hash: filename + filesize
+                return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(fi.Name + "|" + fi.Length));
+            }
+            catch { return null; }
+        }
         
         private void InicializarBaseDatos()
         {
@@ -36,13 +47,15 @@ namespace AnalizadorMoleculas.Services
             using (var conn = new SQLiteConnection(_connectionString))
             {
                 conn.Open();
+                using (var pragma = new SQLiteCommand("PRAGMA foreign_keys = ON;", conn)) pragma.ExecuteNonQuery();
 
                 string queryHistorial = @"
                     CREATE TABLE IF NOT EXISTS HistorialAuditorias (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
                         FechaRegistro TEXT NOT NULL,
                         NombreArchivo TEXT NOT NULL,
-                        TotalRegistros INTEGER NOT NULL,                        
+                        TotalRegistros INTEGER NOT NULL,
+                        Hash TEXT,
                         Observaciones TEXT
                     );";
 
@@ -71,8 +84,39 @@ namespace AnalizadorMoleculas.Services
                         FOREIGN KEY(AuditoriaId) REFERENCES HistorialAuditorias(Id) ON DELETE CASCADE
                     );";
 
-                    using (var cmd = new SQLiteCommand(queryHistorial, conn)) cmd.ExecuteNonQuery();
-                    using (var idxHist = new SQLiteCommand("CREATE INDEX IF NOT EXISTS idx_hist_nombre ON HistorialAuditorias(NombreArchivo);", conn)) idxHist.ExecuteNonQuery();
+                using (var cmd = new SQLiteCommand(queryHistorial, conn)) cmd.ExecuteNonQuery();
+                using (var idxHist = new SQLiteCommand("CREATE INDEX IF NOT EXISTS idx_hist_nombre ON HistorialAuditorias(NombreArchivo);", conn)) idxHist.ExecuteNonQuery();
+                
+                try
+                {
+                    bool hasHash = false;
+                    using (var ti = new SQLiteCommand("PRAGMA table_info('HistorialAuditorias');", conn))
+                    using (var reader = ti.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var colName = reader["name"]?.ToString();
+                            if (string.Equals(colName, "Hash", StringComparison.OrdinalIgnoreCase))
+                            {
+                                hasHash = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!hasHash)
+                    {
+                        using (var alt = new SQLiteCommand("ALTER TABLE HistorialAuditorias ADD COLUMN Hash TEXT;", conn))
+                            alt.ExecuteNonQuery();
+                    }
+
+                    using (var idxHash = new SQLiteCommand("CREATE UNIQUE INDEX IF NOT EXISTS idx_hist_hash ON HistorialAuditorias(Hash);", conn)) idxHash.ExecuteNonQuery();
+                }
+                catch
+                {
+                    // ignore migration failures but continue; index creation may fail on very old DBs
+                }
+
                 using (var cmd = new SQLiteCommand(queryFormuladas, conn)) cmd.ExecuteNonQuery();
                 using (var cmd = new SQLiteCommand(queryVentas, conn)) cmd.ExecuteNonQuery();
 
@@ -89,10 +133,46 @@ namespace AnalizadorMoleculas.Services
                     {
                         try
                         {
+                            // compute quick hash early and check for existing audit to avoid duplicate headers
+                            string quickHash = null;
+                            try { quickHash = ComputeQuickHash(nombreArchivo); } catch { quickHash = null; }
+
+                            if (!string.IsNullOrEmpty(quickHash))
+                            {
+                                using (var chk = new SQLiteCommand("SELECT Id FROM HistorialAuditorias WHERE Hash = @hash LIMIT 1", conn, trans))
+                                {
+                                    chk.Parameters.AddWithValue("@hash", quickHash);
+                                    var existing = chk.ExecuteScalar();
+                                    if (existing != null)
+                                    {
+                                        // already imported; update TotalRegistros from actual counts
+                                        int existingId = Convert.ToInt32(existing);
+                                        using (var cnt = new SQLiteCommand(@"SELECT 
+                                                (SELECT COUNT(*) FROM DatosFormuladas WHERE AuditoriaId = @id) + 
+                                                (SELECT COUNT(*) FROM DatosVentas WHERE AuditoriaId = @id)
+                                                as Total", conn, trans))
+                                        {
+                                            cnt.Parameters.AddWithValue("@id", existingId);
+                                            var totalObj = cnt.ExecuteScalar();
+                                            int total = totalObj != null ? Convert.ToInt32(totalObj) : 0;
+                                            using (var upd = new SQLiteCommand("UPDATE HistorialAuditorias SET TotalRegistros = @total WHERE Id = @id", conn, trans))
+                                            {
+                                                upd.Parameters.AddWithValue("@total", total);
+                                                upd.Parameters.AddWithValue("@id", existingId);
+                                                upd.ExecuteNonQuery();
+                                            }
+                                        }
+
+                                        trans.Commit();
+                                        return;
+                                    }
+                                }
+                            }
+
                             long auditoriaId = 0;
                             string queryInsertCabecera = @"
-                                INSERT INTO HistorialAuditorias (FechaRegistro, NombreArchivo, TotalRegistros, Observaciones)
-                                VALUES (@fecha, @nombre, @total, @obs);
+                                INSERT INTO HistorialAuditorias (FechaRegistro, NombreArchivo, TotalRegistros, Hash, Observaciones)
+                                VALUES (@fecha, @nombre, @total, @hash, @obs);
                                 SELECT last_insert_rowid();";
 
                             using (var cmd = new SQLiteCommand(queryInsertCabecera, conn, trans))
@@ -100,12 +180,15 @@ namespace AnalizadorMoleculas.Services
                                 cmd.Parameters.AddWithValue("@fecha", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                                 cmd.Parameters.AddWithValue("@nombre", nombreArchivo);
                                 cmd.Parameters.AddWithValue("@total", totalReg);
+                                cmd.Parameters.AddWithValue("@hash", quickHash ?? (object)DBNull.Value);
                                 cmd.Parameters.AddWithValue("@obs", obs ?? (object)DBNull.Value);
                                 auditoriaId = (long)cmd.ExecuteScalar();
                             }
 
                             int insertedCount = 0;
-                            if (hojaFormuladas != null && hojaFormuladas.Rows.Count > 0)
+                            bool skipIfDuplicate = false;
+                            // duplicate check already done above by hash; skipIfDuplicate stays false
+                            if (!skipIfDuplicate && hojaFormuladas != null && hojaFormuladas.Rows.Count > 0)
                             {
                                 string queryForm = @"
                                     INSERT INTO DatosFormuladas (AuditoriaId, ATC, Laboratorio, Producto, Presentacion, Unidades)
@@ -140,7 +223,7 @@ namespace AnalizadorMoleculas.Services
                                 }
                             }
 
-                            if (hojaVentas != null && hojaVentas.Rows.Count > 0)
+                            if (!skipIfDuplicate && hojaVentas != null && hojaVentas.Rows.Count > 0)
                             {
                                 string queryVentas = @"
                                     INSERT INTO DatosVentas (AuditoriaId, ATC, Laboratorio, Producto, Presentacion, Unidades, Valor)
@@ -256,6 +339,34 @@ namespace AnalizadorMoleculas.Services
                     }
                 }
                 return lista;
+            });
+        }
+
+        public async Task EliminarAuditoriaAsync(int id)
+        {
+            await Task.Run(() =>
+            {
+                using (var conn = new SQLiteConnection(_connectionString))
+                {
+                    conn.Open();
+                    using (var trans = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            using (var cmd = new SQLiteCommand("DELETE FROM HistorialAuditorias WHERE Id = @id", conn, trans))
+                            {
+                                cmd.Parameters.AddWithValue("@id", id);
+                                cmd.ExecuteNonQuery();
+                            }
+                            trans.Commit();
+                        }
+                        catch
+                        {
+                            trans.Rollback();
+                            throw;
+                        }
+                    }
+                }
             });
         }
     }

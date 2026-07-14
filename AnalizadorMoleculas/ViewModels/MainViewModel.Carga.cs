@@ -33,6 +33,34 @@ namespace AnalizadorMoleculas.ViewModels
             set { _pageSizeHoja = Math.Max(10, value); OnPropertyChanged(nameof(PageSizeHoja)); UpdatePagedViews(); }
         }
 
+        public ICommand EliminarArchivoCommand { get; private set; }
+
+        private async Task EliminarArchivoAsync()
+        {
+            try
+            {
+                // Mostrar lista y pedir confirmación al usuario. Aquí simplificamos: eliminamos la última auditoría si existe.
+                var lista = await _databaseService.ObtenerHistorialAsync();
+                if (lista == null || lista.Count == 0)
+                {
+                    StatusMessage = "No hay archivos para eliminar.";
+                    return;
+                }
+
+                var ultimo = lista[0];
+                var res = System.Windows.MessageBox.Show($"Eliminar historial {ultimo.NombreArchivo} ({ultimo.FechaRegistro})?", "Confirmar eliminación", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
+                if (res != System.Windows.MessageBoxResult.Yes) return;
+
+                await _databaseService.EliminarAuditoriaAsync(ultimo.Id);
+                if (SqliteVM.CargarHistorialSqliteCommand.CanExecute(null)) SqliteVM.CargarHistorialSqliteCommand.Execute(null);
+                StatusMessage = $"Auditoría {ultimo.NombreArchivo} eliminada.";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error eliminando: {ex.Message}";
+            }
+        }
+
         public int CurrentPageForm
         {
             get => _currentPageForm;
@@ -247,8 +275,8 @@ namespace AnalizadorMoleculas.ViewModels
 
                         await _databaseService.GuardarAuditoriaCompletaAsync(
                             nombreArchivo,
-                            totalRegistros,                                               
-                            null,                     
+                            totalRegistros,
+                            null,
                             _hojaFormuladas,
                             _hojaVentas);
                         if (SqliteVM.CargarHistorialSqliteCommand.CanExecute(null))
@@ -328,6 +356,9 @@ namespace AnalizadorMoleculas.ViewModels
                     ? $"{(resultado.TotalUn / resultado.TotalPx) * 100:N1}%"
                     : "0%";
 
+                // Refrescar el módulo de Laboratorio con los datos recién cargados
+                CargarListaLaboratorios();
+
                 StatusMessage = $"✓ Cruce completado: {ListaComparacionEspejo.TotalCount:N0} registros. " +
                                 $"{HojaSeleccionadaFormuladas}: {resultado.FilasFormuladas:N0} filas | " +
                                 $"{HojaSeleccionadaVentas}: {resultado.FilasVentas:N0} filas";
@@ -356,7 +387,8 @@ namespace AnalizadorMoleculas.ViewModels
         private void DetectarIndicesEnHoja(DataTable hoja, bool esFormuladas)
         {
             int idxPack = -1, idxLab = -1, idxValor = -1, idxAtc = -1;
-            int anioMaximo = 0;
+            // Detect pack, lab, atc and the first column that looks like a value (time series)
+            int minValorIndex = int.MaxValue;
 
             for (int i = 0; i < hoja.Columns.Count; i++)
             {
@@ -367,21 +399,17 @@ namespace AnalizadorMoleculas.ViewModels
                     idxLab = i;
                 else if (nombre.Contains("atc"))
                     idxAtc = i;
-                else if (nombre.Contains("mar") || nombre.Contains("mat") || nombre.Contains("value"))
+                else if (nombre.Contains("mar") || nombre.Contains("mat") || nombre.Contains("value") || Regex.IsMatch(nombre, "\\d{2}"))
                 {
-                    var match = Regex.Match(nombre, @"\d{2}");
-                    if (match.Success && int.TryParse(match.Value, out int anio))
-                    {
-                        if (anio > anioMaximo)
-                        {
-                            anioMaximo = anio;
-                            idxValor = i;
-                        }
-                    }
+                    // choose the earliest column that seems to be part of the numeric time series
+                    if (i < minValorIndex) minValorIndex = i;
                 }
             }
 
-            if (idxValor == -1) idxValor = hoja.Columns.Count - 1;
+            if (minValorIndex != int.MaxValue)
+                idxValor = minValorIndex;
+            else
+                idxValor = hoja.Columns.Count - 1;
             if (idxPack == -1) idxPack = 3;
             if (idxLab == -1) idxLab = 1;
             if (idxAtc == -1) idxAtc = 0;
@@ -480,6 +508,9 @@ namespace AnalizadorMoleculas.ViewModels
                     PorcentajeConversion = resultado.TotalPx > 0
                         ? $"{((double)resultado.TotalUn / resultado.TotalPx) * 100:N1}%"
                         : "0%";
+
+                    // Refrescar el módulo de Laboratorio con los datos recién cargados
+                    CargarListaLaboratorios();
 
                     StatusMessage = $"✓ Cruce completado: {ListaComparacionEspejo.TotalCount:N0} registros";
                     ProgresoTexto = "";
@@ -614,7 +645,7 @@ namespace AnalizadorMoleculas.ViewModels
                     if (!lista.Contains(pack) && lista.Count < 4)
                         lista.Add(pack);
                 }
-                catch {}
+                catch { }
             }
 
             return (dicValores, dicPacks);
@@ -727,7 +758,12 @@ namespace AnalizadorMoleculas.ViewModels
                     var allList = allRows.ToList();
                     TotalRowsForm = allList.Count;
                     TotalPagesForm = Math.Max(1, (int)Math.Ceiling((double)TotalRowsForm / _pageSizeHoja));
-                    if (CurrentPageForm > TotalPagesForm) CurrentPageForm = TotalPagesForm;
+                    // Clamp current page without triggering UpdatePagedViews recursively
+                    if (_currentPageForm > TotalPagesForm)
+                    {
+                        _currentPageForm = TotalPagesForm;
+                        OnPropertyChanged(nameof(CurrentPageForm));
+                    }
 
                     var tbl = _hojaFormuladas.Clone();
                     var skip = (CurrentPageForm - 1) * _pageSizeHoja;
@@ -751,7 +787,12 @@ namespace AnalizadorMoleculas.ViewModels
                     var allList = allRows.ToList();
                     TotalRowsVent = allList.Count;
                     TotalPagesVent = Math.Max(1, (int)Math.Ceiling((double)TotalRowsVent / _pageSizeHoja));
-                    if (CurrentPageVent > TotalPagesVent) CurrentPageVent = TotalPagesVent;
+                    // Clamp current page without triggering UpdatePagedViews recursively
+                    if (_currentPageVent > TotalPagesVent)
+                    {
+                        _currentPageVent = TotalPagesVent;
+                        OnPropertyChanged(nameof(CurrentPageVent));
+                    }
 
                     var tbl = _hojaVentas.Clone();
                     var skip = (CurrentPageVent - 1) * _pageSizeHoja;
