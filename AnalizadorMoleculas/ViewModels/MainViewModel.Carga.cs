@@ -1,4 +1,4 @@
-﻿using AnalizadorMoleculas.Models;
+using AnalizadorMoleculas.Models;
 using AnalizadorMoleculas.Services;
 using Microsoft.Win32;
 using System;
@@ -20,6 +20,12 @@ namespace AnalizadorMoleculas.ViewModels
         private DataTable _hojaFormuladas;
         private DataTable _hojaVentas;
         private DataTable _resultadoComparacion;
+
+        // DataTables completos (sin el tope de 200 filas del Preview), usados exclusivamente
+        // para persistir en SQLite. _hojaFormuladas/_hojaVentas siguen siendo el Preview y
+        // alimentan los grids de la UI y la comparación manual, tal como antes.
+        private DataTable _datosCompletosFormuladas;
+        private DataTable _datosCompletosVentas;
 
         private int _pageSizeHoja = 200;
         private int _currentPageForm = 1;
@@ -268,24 +274,40 @@ namespace AnalizadorMoleculas.ViewModels
 
                         await CargarHojasSeleccionadasAsync();
 
-                        StatusMessage = "Guardando en base de datos...";
-
                         string nombreArchivo = System.IO.Path.GetFileName(_rutaActual);
-                        int totalRegistros = (_hojaFormuladas?.Rows.Count ?? 0) + (_hojaVentas?.Rows.Count ?? 0);
 
-                        await _databaseService.GuardarAuditoriaCompletaAsync(
-                            nombreArchivo,
-                            totalRegistros,
-                            null,
-                            _hojaFormuladas,
-                            _hojaVentas);
-                        if (SqliteVM.CargarHistorialSqliteCommand.CanExecute(null))
+                        // Evitar duplicar el historial: si ya existe una auditoría guardada con este
+                        // mismo nombre de archivo, no se vuelve a insertar. Los datos ya quedaron
+                        // cargados y visibles en pantalla por CargarHojasSeleccionadasAsync de arriba.
+                        var existente = await _databaseService.BuscarPorNombreArchivoAsync(nombreArchivo);
+
+                        if (existente != null)
                         {
-                            SqliteVM.CargarHistorialSqliteCommand.Execute(null);
+                            StatusMessage = $"ℹ️ \"{nombreArchivo}\" ya estaba guardado el " +
+                                            $"{existente.FechaRegistro:dd/MM/yyyy HH:mm} " +
+                                            $"({existente.TotalRegistros:N0} registros). Se cargaron los datos en pantalla " +
+                                            $"sin duplicar el historial.";
                         }
+                        else
+                        {
+                            StatusMessage = "Guardando en base de datos...";
 
-                        StatusMessage = "✅ Archivo cargado y guardado correctamente en el historial.";
+                            int totalRegistros = (_datosCompletosFormuladas?.Rows.Count ?? 0) + (_datosCompletosVentas?.Rows.Count ?? 0);
 
+                            await _databaseService.GuardarAuditoriaCompletaAsync(
+                                nombreArchivo,
+                                totalRegistros,
+                                null,
+                                _datosCompletosFormuladas,
+                                _datosCompletosVentas);
+
+                            if (SqliteVM.CargarHistorialSqliteCommand.CanExecute(null))
+                            {
+                                SqliteVM.CargarHistorialSqliteCommand.Execute(null);
+                            }
+
+                            StatusMessage = "✅ Archivo cargado y guardado correctamente en el historial.";
+                        }
                     }
                     else
                     {
@@ -332,6 +354,8 @@ namespace AnalizadorMoleculas.ViewModels
 
                 _hojaFormuladas = resultado.PreviewFormuladas;
                 _hojaVentas = resultado.PreviewVentas;
+                _datosCompletosFormuladas = resultado.DatosCompletosFormuladas;
+                _datosCompletosVentas = resultado.DatosCompletosVentas;
                 CurrentPageForm = 1;
                 CurrentPageVent = 1;
                 FilterForm = string.Empty;
