@@ -19,11 +19,12 @@ namespace AnalizadorMoleculas.ViewModels
 
         private DataTable _hojaFormuladas;
         private DataTable _hojaVentas;
+        private DataTable _hojaFormuladasView;
+        private DataTable _hojaVentasView;
         private DataTable _resultadoComparacion;
 
-        // DataTables completos (sin el tope de 200 filas del Preview), usados exclusivamente
-        // para persistir en SQLite. _hojaFormuladas/_hojaVentas siguen siendo el Preview y
-        // alimentan los grids de la UI y la comparación manual, tal como antes.
+        // DataTables completos usados para análisis, métricas, brechas, SQLite y comparación.
+        // HojaFormuladasView/HojaVentasView solo contienen la página visible del grid.
         private DataTable _datosCompletosFormuladas;
         private DataTable _datosCompletosVentas;
 
@@ -116,14 +117,14 @@ namespace AnalizadorMoleculas.ViewModels
         private readonly DatabaseService _databaseService = new DatabaseService();
         public DataTable HojaFormuladasView
         {
-            get => _hojaFormuladas;
-            set { _hojaFormuladas = value; OnPropertyChanged(nameof(HojaFormuladasView)); }
+            get => _hojaFormuladasView;
+            set { _hojaFormuladasView = value; OnPropertyChanged(nameof(HojaFormuladasView)); }
         }
 
         public DataTable HojaVentasView
         {
-            get => _hojaVentas;
-            set { _hojaVentas = value; OnPropertyChanged(nameof(HojaVentasView)); }
+            get => _hojaVentasView;
+            set { _hojaVentasView = value; OnPropertyChanged(nameof(HojaVentasView)); }
         }
 
         public DataTable ResultadoView
@@ -336,6 +337,10 @@ namespace AnalizadorMoleculas.ViewModels
 
             HojaFormuladasView = null;
             HojaVentasView = null;
+            _hojaFormuladas = null;
+            _hojaVentas = null;
+            _datosCompletosFormuladas = null;
+            _datosCompletosVentas = null;
             ListaComparacionEspejo.Clear();
             TotalPxCalculado = 0;
             TotalUnCalculado = 0;
@@ -352,10 +357,10 @@ namespace AnalizadorMoleculas.ViewModels
                 var resultado = await Task.Run(() =>
                     _excelService.LeerResumenDosHojas(_rutaActual, idxForm, idxVent));
 
-                _hojaFormuladas = resultado.PreviewFormuladas;
-                _hojaVentas = resultado.PreviewVentas;
                 _datosCompletosFormuladas = resultado.DatosCompletosFormuladas;
                 _datosCompletosVentas = resultado.DatosCompletosVentas;
+                _hojaFormuladas = _datosCompletosFormuladas;
+                _hojaVentas = _datosCompletosVentas;
                 CurrentPageForm = 1;
                 CurrentPageVent = 1;
                 FilterForm = string.Empty;
@@ -767,6 +772,191 @@ namespace AnalizadorMoleculas.ViewModels
             OnPropertyChanged(nameof(ResultadoView));
             StatusMessage = $"Comparación generada: {dt.Rows.Count:N0} filas.";
         }
+
+        private void OnAuditoriaSqliteCargada(object sender, AuditoriaCargadaEventArgs e)
+        {
+            try
+            {
+                _rutaActual = e.Auditoria.NombreArchivo;
+                _datosCompletosFormuladas = e.Formuladas;
+                _datosCompletosVentas = e.Ventas;
+                _hojaFormuladas = e.Formuladas;
+                _hojaVentas = e.Ventas;
+
+                NombresHojas.Clear();
+                NombresHojas.Add("Formuladas");
+                NombresHojas.Add("Ventas");
+                _hojaSeleccionadaFormuladas = "Formuladas";
+                _hojaSeleccionadaVentas = "Ventas";
+                HojaAnalisisSeleccionada = "Formuladas";
+                OnPropertyChanged(nameof(HojaSeleccionadaFormuladas));
+                OnPropertyChanged(nameof(HojaSeleccionadaVentas));
+
+                DetectarIndicesEnHoja(_hojaFormuladas, true);
+                DetectarIndicesEnHoja(_hojaVentas, false);
+
+                CurrentPageForm = 1;
+                CurrentPageVent = 1;
+                FilterForm = string.Empty;
+                FilterVent = string.Empty;
+                UpdatePagedViews();
+
+                var comparacion = ConstruirComparacionDesdeTablas(_hojaFormuladas, _hojaVentas);
+                ListaComparacionEspejo.LoadItems(comparacion.Items);
+                TotalPxCalculado = comparacion.TotalPx;
+                TotalUnCalculado = comparacion.TotalUn;
+                PorcentajeConversion = comparacion.TotalPx > 0
+                    ? $"{(comparacion.TotalUn / comparacion.TotalPx) * 100:N1}%"
+                    : "0%";
+
+                CargarListaLaboratorios();
+                VistaActual = "espejo";
+                StatusMessage = $"✓ Auditoría SQLite cargada: {e.Auditoria.NombreArchivo} ({ListaComparacionEspejo.TotalCount:N0} registros).";
+                CommandManager.InvalidateRequerySuggested();
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error cargando auditoría SQLite: {ex.Message}";
+                MessageBox.Show($"Error cargando auditoría SQLite:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private (List<EspejoComparativo> Items, double TotalPx, double TotalUn) ConstruirComparacionDesdeTablas(DataTable formuladas, DataTable ventas)
+        {
+            var registrosPx = LeerRegistrosComparacion(formuladas);
+            var registrosUn = LeerRegistrosComparacion(ventas);
+
+            var llaves = new List<(string atc, string lab, string prod)>();
+            var vistas = new HashSet<(string atc, string lab, string prod)>();
+            AgregarLlavesComparacion(registrosPx.Keys, llaves, vistas);
+            AgregarLlavesComparacion(registrosUn.Keys, llaves, vistas);
+
+            var items = new List<EspejoComparativo>();
+            double totalPx = 0;
+            double totalUn = 0;
+
+            foreach (var llave in llaves)
+            {
+                registrosPx.TryGetValue(llave, out var listaPx);
+                registrosUn.TryGetValue(llave, out var listaUn);
+                listaPx ??= new List<RegistroComparacionSqlite>();
+                listaUn ??= new List<RegistroComparacionSqlite>();
+
+                var mapaPx = listaPx.GroupBy(r => ObtenerClavePackLocal(r.Pack)).ToDictionary(g => g.Key, g => g.ToList());
+                var mapaUn = listaUn.GroupBy(r => ObtenerClavePackLocal(r.Pack)).ToDictionary(g => g.Key, g => g.ToList());
+
+                var packs = new List<string>();
+                var packsVistos = new HashSet<string>();
+                foreach (var r in listaPx)
+                {
+                    string clave = ObtenerClavePackLocal(r.Pack);
+                    if (packsVistos.Add(clave)) packs.Add(clave);
+                }
+                foreach (var r in listaUn)
+                {
+                    string clave = ObtenerClavePackLocal(r.Pack);
+                    if (packsVistos.Add(clave)) packs.Add(clave);
+                }
+
+                foreach (string packKey in packs)
+                {
+                    var px = mapaPx.TryGetValue(packKey, out var lpx) ? lpx : new List<RegistroComparacionSqlite>();
+                    var un = mapaUn.TryGetValue(packKey, out var lun) ? lun : new List<RegistroComparacionSqlite>();
+                    int filas = Math.Max(px.Count, un.Count);
+
+                    for (int i = 0; i < filas; i++)
+                    {
+                        var itemPx = i < px.Count ? px[i] : null;
+                        var itemUn = i < un.Count ? un[i] : null;
+
+                        totalPx += itemPx?.Valor ?? 0;
+                        totalUn += itemUn?.Valor ?? 0;
+
+                        items.Add(new EspejoComparativo
+                        {
+                            Atc = llave.atc,
+                            Laboratorio = llave.lab,
+                            Producto = llave.prod,
+                            PackPx = itemPx?.Pack,
+                            TotalRecetado = itemPx?.Valor ?? 0,
+                            PackUn = itemUn?.Pack,
+                            TotalVendido = itemUn?.Valor ?? 0
+                        });
+                    }
+                }
+            }
+
+            return (items, totalPx, totalUn);
+        }
+
+        private Dictionary<(string atc, string lab, string prod), List<RegistroComparacionSqlite>> LeerRegistrosComparacion(DataTable tabla)
+        {
+            var resultado = new Dictionary<(string atc, string lab, string prod), List<RegistroComparacionSqlite>>();
+            if (tabla == null || tabla.Rows.Count == 0) return resultado;
+
+            int idxAtc = BuscarColumna(tabla, "ATC", 0);
+            int idxLab = BuscarColumna(tabla, "Laboratorio", 1);
+            int idxProd = BuscarColumna(tabla, "Producto", 2);
+            int idxPack = BuscarColumna(tabla, "Presentacion", 3);
+            int idxValor = BuscarColumna(tabla, "Unidades", Math.Max(0, tabla.Columns.Count - 1));
+
+            foreach (DataRow row in tabla.Rows)
+            {
+                string atcRaw = row[idxAtc]?.ToString()?.Trim().ToUpperInvariant() ?? "";
+                string atc = atcRaw.Length >= 4 ? atcRaw[..4] : atcRaw;
+                if (string.IsNullOrWhiteSpace(atc)) atc = "SIN ATC";
+
+                string lab = NormalizarTextoAbsoluto(row[idxLab]?.ToString());
+                string prod = NormalizarTextoAbsoluto(row[idxProd]?.ToString());
+                string pack = row[idxPack]?.ToString()?.Trim();
+                if (string.IsNullOrWhiteSpace(pack)) pack = "SIN PACK";
+                double valor = ConvertirADouble(row[idxValor]?.ToString());
+
+                var llave = (atc, lab, prod);
+                if (!resultado.TryGetValue(llave, out var lista))
+                {
+                    lista = new List<RegistroComparacionSqlite>();
+                    resultado[llave] = lista;
+                }
+
+                lista.Add(new RegistroComparacionSqlite { Pack = pack, Valor = valor });
+            }
+
+            return resultado;
+        }
+
+        private static void AgregarLlavesComparacion(
+            IEnumerable<(string atc, string lab, string prod)> origen,
+            List<(string atc, string lab, string prod)> destino,
+            HashSet<(string atc, string lab, string prod)> vistas)
+        {
+            foreach (var llave in origen)
+            {
+                if (vistas.Add(llave))
+                    destino.Add(llave);
+            }
+        }
+
+        private static int BuscarColumna(DataTable tabla, string nombre, int fallback)
+        {
+            if (tabla.Columns.Contains(nombre)) return tabla.Columns[nombre].Ordinal;
+            return Math.Min(Math.Max(0, fallback), tabla.Columns.Count - 1);
+        }
+
+        private static string ObtenerClavePackLocal(string pack)
+        {
+            if (string.IsNullOrWhiteSpace(pack) || pack == "SIN PACK")
+                return "SIN_PACK";
+
+            return Regex.Replace(pack.Trim().ToUpperInvariant(), @"\s+", " ");
+        }
+
+        private sealed class RegistroComparacionSqlite
+        {
+            public string Pack { get; set; }
+            public double Valor { get; set; }
+        }
+
         private void UpdatePagedViews()
         {
             try
