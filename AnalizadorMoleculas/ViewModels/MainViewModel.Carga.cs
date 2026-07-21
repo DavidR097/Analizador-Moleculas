@@ -368,15 +368,22 @@ namespace AnalizadorMoleculas.ViewModels
                 UpdatePagedViews();
                 HojaAnalisisSeleccionada = HojaSeleccionadaFormuladas;
 
-                _idxPackForm = resultado.IndicesFormuladas.IdxPack;
-                _idxLabForm = resultado.IndicesFormuladas.IdxLab;
-                _idxValorForm = resultado.IndicesFormuladas.IdxValor;
-                _idxAtcForm = resultado.IndicesFormuladas.IdxAtc;
+                // IMPORTANTE: _hojaFormuladas/_hojaVentas son la tabla "DatosCompletos" con layout FIJO:
+                // columna 0=ATC, 1=Laboratorio, 2=Producto, 3=Presentacion, 4=Unidades.
+                // resultado.IndicesFormuladas/IndicesVentas describen columnas del Excel ORIGINAL
+                // (que puede tener muchas más columnas) y NO deben aplicarse sobre esta tabla —
+                // por eso GenerarComparacion() estaba leyendo columnas equivocadas.
+                const int IDX_ATC = 0, IDX_LAB = 1, IDX_PROD = 2, IDX_PACK = 3, IDX_VALOR = 4;
 
-                _idxPackVent = resultado.IndicesVentas.IdxPack;
-                _idxLabVent = resultado.IndicesVentas.IdxLab;
-                _idxValorVent = resultado.IndicesVentas.IdxValor;
-                _idxAtcVent = resultado.IndicesVentas.IdxAtc;
+                _idxAtcForm = IDX_ATC;
+                _idxLabForm = IDX_LAB;
+                _idxPackForm = IDX_PACK;
+                _idxValorForm = IDX_VALOR;
+
+                _idxAtcVent = IDX_ATC;
+                _idxLabVent = IDX_LAB;
+                _idxPackVent = IDX_PACK;
+                _idxValorVent = IDX_VALOR;
 
                 ListaComparacionEspejo.LoadItems(resultado.Items);
                 TotalPxCalculado = resultado.TotalPx;
@@ -910,7 +917,7 @@ namespace AnalizadorMoleculas.ViewModels
                 string prod = NormalizarTextoAbsoluto(row[idxProd]?.ToString());
                 string pack = row[idxPack]?.ToString()?.Trim();
                 if (string.IsNullOrWhiteSpace(pack)) pack = "SIN PACK";
-                double valor = ConvertirADouble(row[idxValor]?.ToString());
+                double valor = row[idxValor] is double dVal ? dVal : ConvertirADouble(row[idxValor]?.ToString());
 
                 var llave = (atc, lab, prod);
                 if (!resultado.TryGetValue(llave, out var lista))
@@ -943,12 +950,18 @@ namespace AnalizadorMoleculas.ViewModels
             return Math.Min(Math.Max(0, fallback), tabla.Columns.Count - 1);
         }
 
-        private static string ObtenerClavePackLocal(string pack)
+        private string ObtenerClavePackLocal(string pack)
         {
             if (string.IsNullOrWhiteSpace(pack) || pack == "SIN PACK")
                 return "SIN_PACK";
 
-            return Regex.Replace(pack.Trim().ToUpperInvariant(), @"\s+", " ");
+            // Debe replicar EXACTAMENTE la lógica de ObtenerClavePack en ExcelService.cs
+            // (primera palabra tras NormalizarTextoAbsoluto), o los cruces Px/Un no coinciden
+            // entre el camino "subir Excel" y el camino "Cargar desde SQLite" — esto era lo
+            // que hacía que "moléculas en cruce" saliera distinto entre ambos caminos.
+            string limpio = NormalizarTextoAbsoluto(pack);
+            var palabras = limpio.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            return palabras.Length > 0 ? palabras[0] : "SIN_PACK";
         }
 
         private sealed class RegistroComparacionSqlite
@@ -1037,7 +1050,7 @@ namespace AnalizadorMoleculas.ViewModels
                 dtExport.Columns.Add("Pack PX", typeof(string));
                 dtExport.Columns.Add("Recetado (PX)", typeof(double));
                 dtExport.Columns.Add("Pack UN", typeof(string));
-                dtExport.Columns.Add("Vendido (UN)", typeof(double));
+                dtExport.Columns.Add("Vendido (UN)", typeof(double)); 
 
                 foreach (var item in _listaComparacionEspejo)
                 {
