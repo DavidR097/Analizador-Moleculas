@@ -18,8 +18,7 @@ namespace AnalizadorMoleculas.ViewModels
 
         public event NotifyCollectionChangedEventHandler CollectionChanged;
         public event PropertyChangedEventHandler PropertyChanged;
-
-        /// <param name="filterPredicate">
+        
         public VirtualizedObservableCollection(Func<T, string, bool> filterPredicate = null)
         {
             _filterPredicate = filterPredicate ?? ((_, __) => true);
