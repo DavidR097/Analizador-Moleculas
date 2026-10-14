@@ -4,7 +4,6 @@ using System.Windows.Data;
 
 namespace AnalizadorMoleculas.Converters
 {
-    // Convierte entre la propiedad VistaActual (string) y el IsChecked de los RadioButtons del sidebar
     public class ViewEqualsConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
