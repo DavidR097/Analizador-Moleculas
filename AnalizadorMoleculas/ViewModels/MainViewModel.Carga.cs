@@ -22,9 +22,6 @@ namespace AnalizadorMoleculas.ViewModels
         private DataTable _hojaFormuladasView;
         private DataTable _hojaVentasView;
         private DataTable _resultadoComparacion;
-
-        // DataTables completos usados para análisis, métricas, brechas, SQLite y comparación.
-        // HojaFormuladasView/HojaVentasView solo contienen la página visible del grid.
         private DataTable _datosCompletosFormuladas;
         private DataTable _datosCompletosVentas;
 
@@ -46,7 +43,6 @@ namespace AnalizadorMoleculas.ViewModels
         {
             try
             {
-                // Mostrar lista y pedir confirmación al usuario. Aquí simplificamos: eliminamos la última auditoría si existe.
                 var lista = await _databaseService.ObtenerHistorialAsync();
                 if (lista == null || lista.Count == 0)
                 {
@@ -277,9 +273,6 @@ namespace AnalizadorMoleculas.ViewModels
 
                         string nombreArchivo = System.IO.Path.GetFileName(_rutaActual);
 
-                        // Evitar duplicar el historial: si ya existe una auditoría guardada con este
-                        // mismo nombre de archivo, no se vuelve a insertar. Los datos ya quedaron
-                        // cargados y visibles en pantalla por CargarHojasSeleccionadasAsync de arriba.
                         var existente = await _databaseService.BuscarPorNombreArchivoAsync(nombreArchivo);
 
                         if (existente != null)
@@ -368,11 +361,6 @@ namespace AnalizadorMoleculas.ViewModels
                 UpdatePagedViews();
                 HojaAnalisisSeleccionada = HojaSeleccionadaFormuladas;
 
-                // IMPORTANTE: _hojaFormuladas/_hojaVentas son la tabla "DatosCompletos" con layout FIJO:
-                // columna 0=ATC, 1=Laboratorio, 2=Producto, 3=Presentacion, 4=Unidades.
-                // resultado.IndicesFormuladas/IndicesVentas describen columnas del Excel ORIGINAL
-                // (que puede tener muchas más columnas) y NO deben aplicarse sobre esta tabla —
-                // por eso GenerarComparacion() estaba leyendo columnas equivocadas.
                 const int IDX_ATC = 0, IDX_LAB = 1, IDX_PROD = 2, IDX_PACK = 3, IDX_VALOR = 4;
 
                 _idxAtcForm = IDX_ATC;
@@ -392,7 +380,6 @@ namespace AnalizadorMoleculas.ViewModels
                     ? $"{(resultado.TotalUn / resultado.TotalPx) * 100:N1}%"
                     : "0%";
 
-                // Refrescar el módulo de Laboratorio con los datos recién cargados
                 CargarListaLaboratorios();
 
                 StatusMessage = $"✓ Cruce completado: {ListaComparacionEspejo.TotalCount:N0} registros. " +
@@ -423,7 +410,6 @@ namespace AnalizadorMoleculas.ViewModels
         private void DetectarIndicesEnHoja(DataTable hoja, bool esFormuladas)
         {
             int idxPack = -1, idxLab = -1, idxValor = -1, idxAtc = -1;
-            // Detect pack, lab, atc and the first column that looks like a value (time series)
             int minValorIndex = int.MaxValue;
 
             for (int i = 0; i < hoja.Columns.Count; i++)
@@ -437,7 +423,6 @@ namespace AnalizadorMoleculas.ViewModels
                     idxAtc = i;
                 else if (nombre.Contains("mar") || nombre.Contains("mat") || nombre.Contains("value") || Regex.IsMatch(nombre, "\\d{2}"))
                 {
-                    // choose the earliest column that seems to be part of the numeric time series
                     if (i < minValorIndex) minValorIndex = i;
                 }
             }
@@ -545,7 +530,6 @@ namespace AnalizadorMoleculas.ViewModels
                         ? $"{((double)resultado.TotalUn / resultado.TotalPx) * 100:N1}%"
                         : "0%";
 
-                    // Refrescar el módulo de Laboratorio con los datos recién cargados
                     CargarListaLaboratorios();
 
                     StatusMessage = $"✓ Cruce completado: {ListaComparacionEspejo.TotalCount:N0} registros";
@@ -955,10 +939,6 @@ namespace AnalizadorMoleculas.ViewModels
             if (string.IsNullOrWhiteSpace(pack) || pack == "SIN PACK")
                 return "SIN_PACK";
 
-            // Debe replicar EXACTAMENTE la lógica de ObtenerClavePack en ExcelService.cs
-            // (primera palabra tras NormalizarTextoAbsoluto), o los cruces Px/Un no coinciden
-            // entre el camino "subir Excel" y el camino "Cargar desde SQLite" — esto era lo
-            // que hacía que "moléculas en cruce" saliera distinto entre ambos caminos.
             string limpio = NormalizarTextoAbsoluto(pack);
             var palabras = limpio.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             return palabras.Length > 0 ? palabras[0] : "SIN_PACK";
@@ -985,7 +965,6 @@ namespace AnalizadorMoleculas.ViewModels
                     var allList = allRows.ToList();
                     TotalRowsForm = allList.Count;
                     TotalPagesForm = Math.Max(1, (int)Math.Ceiling((double)TotalRowsForm / _pageSizeHoja));
-                    // Clamp current page without triggering UpdatePagedViews recursively
                     if (_currentPageForm > TotalPagesForm)
                     {
                         _currentPageForm = TotalPagesForm;
@@ -1014,7 +993,6 @@ namespace AnalizadorMoleculas.ViewModels
                     var allList = allRows.ToList();
                     TotalRowsVent = allList.Count;
                     TotalPagesVent = Math.Max(1, (int)Math.Ceiling((double)TotalRowsVent / _pageSizeHoja));
-                    // Clamp current page without triggering UpdatePagedViews recursively
                     if (_currentPageVent > TotalPagesVent)
                     {
                         _currentPageVent = TotalPagesVent;
