@@ -31,7 +31,6 @@ namespace AnalizadorMoleculas.Services
             {
                 if (!File.Exists(filePath)) return null;
                 var fi = new FileInfo(filePath);
-                // quick hash: filename + filesize
                 return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(fi.Name + "|" + fi.Length));
             }
             catch { return null; }
@@ -114,7 +113,6 @@ namespace AnalizadorMoleculas.Services
                 }
                 catch
                 {
-                    // ignore migration failures but continue; index creation may fail on very old DBs
                 }
 
                 using (var cmd = new SQLiteCommand(queryFormuladas, conn)) cmd.ExecuteNonQuery();
@@ -133,7 +131,6 @@ namespace AnalizadorMoleculas.Services
                     {
                         try
                         {
-                            // compute quick hash early and check for existing audit to avoid duplicate headers
                             string quickHash = null;
                             try { quickHash = ComputeQuickHash(nombreArchivo); } catch { quickHash = null; }
 
@@ -145,7 +142,6 @@ namespace AnalizadorMoleculas.Services
                                     var existing = chk.ExecuteScalar();
                                     if (existing != null)
                                     {
-                                        // already imported; update TotalRegistros from actual counts
                                         int existingId = Convert.ToInt32(existing);
                                         using (var cnt = new SQLiteCommand(@"SELECT 
                                                 (SELECT COUNT(*) FROM DatosFormuladas WHERE AuditoriaId = @id) + 
@@ -187,7 +183,6 @@ namespace AnalizadorMoleculas.Services
 
                             int insertedCount = 0;
                             bool skipIfDuplicate = false;
-                            // duplicate check already done above by hash; skipIfDuplicate stays false
                             if (!skipIfDuplicate && hojaFormuladas != null && hojaFormuladas.Rows.Count > 0)
                             {
                                 string queryForm = @"
@@ -218,7 +213,7 @@ namespace AnalizadorMoleculas.Services
                                             cmdForm.ExecuteNonQuery();
                                             insertedCount++;
                                         }
-                                        catch (SQLiteException) { /* ignorar duplicados por índice único */ }
+                                        catch (SQLiteException) {}
                                     }
                                 }
                             }
@@ -255,7 +250,7 @@ namespace AnalizadorMoleculas.Services
                                             cmdVentas.ExecuteNonQuery();
                                             insertedCount++;
                                         }
-                                        catch (SQLiteException) { /* ignorar duplicados por índice único */ }
+                                        catch (SQLiteException) {}
                                     }
                                 }
                             }
