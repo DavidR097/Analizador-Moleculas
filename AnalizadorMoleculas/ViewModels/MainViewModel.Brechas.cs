@@ -136,7 +136,7 @@ namespace AnalizadorMoleculas.ViewModels
                         return;
                     }
 
-                    var todasLasMoleculas = dicFormulados.Keys.Union(dicVentas.Keys).ToList(); // placeholder no-op edit
+                    var todasLasMoleculas = dicFormulados.Keys.Union(dicVentas.Keys).ToList(); 
                     var listaResultado = new List<BrechaMoleculaModel>();
 
                     double totalDiferenciaAbsoluta = 0;
@@ -202,7 +202,6 @@ namespace AnalizadorMoleculas.ViewModels
                             StatusMessage = "✓ Análisis de brechas completado.";
                         }
 
-                        // Construir gráfica de barras para las principales brechas (top 8)
                         var topChart = listaOrdenada.Take(8).ToList();
                         if (topChart.Any())
                         {
@@ -283,7 +282,6 @@ namespace AnalizadorMoleculas.ViewModels
                                 }
                             };
 
-                            // Construir gráfica de Tendencia (línea con sombreado) usando Ventas (UN) como ejemplo
                             var ventas = topChart.Select(t => Math.Round(t.UnidadesComercial, 0)).ToArray();
                             BrechasSeriesTendencia = new ISeries[]
                             {
