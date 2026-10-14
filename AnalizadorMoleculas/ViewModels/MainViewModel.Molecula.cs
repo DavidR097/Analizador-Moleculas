@@ -167,7 +167,6 @@ namespace AnalizadorMoleculas.ViewModels
             set { _molDetalleUn = value; OnPropertyChanged(nameof(MolDetalleUn)); }
         }
 
-        // Ranking pagination (mostrar máximo 20 registros por página)
         private List<(string Lab, string Pack, double Value)> _rankingPxFull = new();
         private List<(string Lab, string Pack, double Value)> _rankingUnFull = new();
         private const int RankingPageSize = 20;
